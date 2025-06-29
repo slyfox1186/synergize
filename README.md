@@ -44,39 +44,33 @@ A multi-model AI collaboration system where Large Language Models work together 
 
 ## 🚀 Quick Start
 
+See our comprehensive [Installation Guide](INSTALL.md) for detailed setup instructions.
+
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Redis server running locally
-- GGUF model files (see Models section)
+- Redis server
 - 16GB+ RAM recommended
-- GPU with CUDA support (optional but recommended)
+- GGUF model files (5-8GB each)
 
-### Installation
+### Quick Install
 
 ```bash
-# Clone the repository
+# Clone and install
 git clone https://github.com/slyfox1186/synergize.git
 cd synergize
-
-# Install dependencies
 npm install
 
-# Create models directory
+# Download models (see INSTALL.md for details)
 mkdir -p models
+# Download the GGUF files to models/ directory
 
-# Download GGUF models (see Models section for URLs)
-# Place them in the models/ directory
-
-# Copy environment variables
-cp .env.example .env
-
-# Start Redis (if not already running)
+# Start Redis and run
 redis-server
-
-# Start the application
 npm run dev
 ```
+
+Open `http://localhost:3000` to access the application.
 
 ### Models
 
