@@ -756,27 +756,48 @@ This is a critical correction - ensure accuracy!`;
       const context = await this.modelService.acquireContext(this.GEMMA_MODEL_ID);
       try {
 
-        // For final synthesis, we want to stream to the synthesis panel instead of model panel
-        // We'll modify the streaming to route to synthesis panel
+        // For final synthesis, we want to stream to the synthesis panel
+        // Store the original method
         const originalAddToken = this.streamingService.addToken.bind(this.streamingService);
         
-        // Temporarily override streaming to route to synthesis panel
-        this.streamingService.addToken = (_modelId: string, phase: CollaborationPhase, token: string): void => {
-          // Route to synthesis panel instead
+        // Send initial synthesis update to trigger the panel
+        this.sendMessage({
+          type: SSEMessageType.SYNTHESIS_UPDATE,
+          payload: {
+            modelId: 'synthesis',
+            phase: CollaborationPhase.SYNTHESIZE,
+            tokens: [''],  // Empty token to trigger panel activation
+            isComplete: false
+          } as TokenChunk
+        });
+        
+        // Override streaming to route to synthesis panel
+        const originalCompleteStream = this.streamingService.completeStream.bind(this.streamingService);
+        
+        this.streamingService.addToken = (modelId: string, phase: CollaborationPhase, token: string): void => {
+          // Always route synthesis to the synthesis panel
           originalAddToken('synthesis', phase, token);
         };
+        
+        this.streamingService.completeStream = (modelId: string, phase: CollaborationPhase): void => {
+          // Also route completion to synthesis panel
+          originalCompleteStream('synthesis', phase);
+        };
 
-        await this.generateWithModel(
-          this.GEMMA_MODEL_ID,
-          context,
-          synthesisInstruction,  // The synthesis task/prompt contains everything needed
-          CollaborationPhase.SYNTHESIZE,  // Use SYNTHESIZE phase for optimal token allocation
-          undefined,  // No additional context needed - it's in the prompt
-          allocation  // Pass the pre-calculated allocation
-        );
-
-        // Restore original streaming
-        this.streamingService.addToken = originalAddToken;
+        try {
+          await this.generateWithModel(
+            this.GEMMA_MODEL_ID,
+            context,
+            synthesisInstruction,  // The synthesis task/prompt contains everything needed
+            CollaborationPhase.SYNTHESIZE,  // Use SYNTHESIZE phase for optimal token allocation
+            undefined,  // No additional context needed - it's in the prompt
+            allocation  // Pass the pre-calculated allocation
+          );
+        } finally {
+          // Always restore original streaming, even if generation fails
+          this.streamingService.addToken = originalAddToken;
+          this.streamingService.completeStream = originalCompleteStream;
+        }
         
         // Send the complete synthesis update for the panel header
         this.sendMessage({
