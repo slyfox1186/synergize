@@ -1,6 +1,19 @@
 /**
  * CircularBuffer - A memory-efficient circular buffer implementation
  * Used for maintaining a sliding window of tokens without accumulating unlimited memory
+ * 
+ * Currently used methods:
+ * - constructor(capacity) - Create buffer with fixed capacity
+ * - push(...items) - Add items to buffer
+ * - getRecent(count) - Get most recent N items
+ * 
+ * Additional utility methods available for future use:
+ * - toArray() - Get all items in order
+ * - getSize() - Get current item count
+ * - getCapacity() - Get maximum capacity
+ * - clear() - Remove all items
+ * - isEmpty() - Check if buffer is empty
+ * - isFull() - Check if buffer is at capacity
  */
 export class CircularBuffer<T> {
   private buffer: (T | undefined)[];
