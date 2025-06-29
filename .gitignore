@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+frontend/dist/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.*
+
+# Security files
+*.key
+*.pem
+*.cert
+*.crt
+*.p12
+*.pfx
+
+# API keys and secrets
+*api_key*
+*secret*
+*token*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Model files
+models/*.gguf
+models/*.bin
+
+# Redis dump
+dump.rdb
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+temp/
+
+requirements/

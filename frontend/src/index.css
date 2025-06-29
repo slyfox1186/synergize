@@ -1,0 +1,85 @@
+@import './styles/markdown.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-jarvis-darker text-jarvis-text font-mono;
+  }
+  
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-jarvis-dark;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-jarvis-muted hover:bg-jarvis-primary rounded-full;
+  }
+}
+
+@layer components {
+  .jarvis-glow {
+    @apply shadow-[0_0_20px_rgba(0,212,255,0.5)];
+  }
+  
+  .jarvis-border {
+    @apply border border-jarvis-primary/30 hover:border-jarvis-primary/60 transition-colors;
+  }
+  
+  .jarvis-button {
+    @apply px-6 py-3 bg-jarvis-dark jarvis-border text-jarvis-primary 
+           hover:bg-jarvis-primary/10 transition-all duration-300
+           font-tech uppercase tracking-wider;
+  }
+  
+  .jarvis-input {
+    @apply w-full px-4 py-3 bg-jarvis-dark jarvis-border 
+           text-jarvis-text placeholder-jarvis-muted
+           focus:outline-none focus:jarvis-glow transition-all;
+  }
+  
+  .phase-header {
+    @apply text-jarvis-accent font-tech text-sm mb-2 uppercase tracking-wider
+           border-b border-jarvis-accent/20 pb-2;
+  }
+  
+  .model-panel {
+    @apply bg-jarvis-dark/50 backdrop-blur-sm jarvis-border rounded-lg p-6
+           hover:bg-jarvis-dark/70 transition-all;
+  }
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 10px currentColor;
+  }
+  
+  .animate-stream {
+    animation: stream-in 0.3s ease-out;
+  }
+  
+  /* Pulsing text animation for critical information */
+  @keyframes text-pulse {
+    0%, 100% {
+      opacity: 1;
+      text-shadow: 0 0 10px currentColor;
+    }
+    50% {
+      opacity: 0.85;
+      text-shadow: 0 0 20px currentColor;
+    }
+  }
+  
+  .animate-text-pulse {
+    animation: text-pulse 2s ease-in-out infinite;
+  }
+}

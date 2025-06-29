@@ -1,0 +1,190 @@
+/* Markdown content styling */
+.markdown-content {
+  color: inherit;
+  line-height: 1.6;
+}
+
+/* Code blocks */
+.markdown-content pre {
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 0.375rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.markdown-content pre code {
+  background: none;
+  padding: 0;
+  border: none;
+  font-size: 0.875rem;
+  color: #00ffff;
+}
+
+/* Inline code */
+.markdown-content code {
+  background-color: rgba(0, 255, 255, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  color: #00ffff;
+}
+
+/* Headings with enhanced size hierarchy */
+.markdown-content h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+  color: #00ffff;
+  text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+.markdown-content h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 1.75em;
+  margin-bottom: 0.6em;
+  color: #00ffff;
+  text-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+  letter-spacing: 0.03em;
+}
+
+.markdown-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: #00d4ff;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.markdown-content h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.4em;
+  color: #00d4ff;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* Lists */
+.markdown-content ul,
+.markdown-content ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.markdown-content li {
+  margin: 0.25rem 0;
+}
+
+/* Bold text - extra prominent */
+.markdown-content strong,
+.markdown-content b {
+  color: #00ffff;
+  font-weight: 800;
+  font-size: 1.05em;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+  letter-spacing: 0.02em;
+}
+
+/* Double emphasis (bold + italic) */
+.markdown-content strong em,
+.markdown-content b i,
+.markdown-content em strong,
+.markdown-content i b {
+  color: #00ffff;
+  font-weight: 900;
+  font-size: 1.1em;
+  font-style: italic;
+  text-shadow: 0 0 12px rgba(0, 255, 255, 0.8);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-color: rgba(0, 255, 255, 0.5);
+}
+
+/* Emphasis text */
+.markdown-content em,
+.markdown-content i {
+  color: #00d4ff;
+  font-style: italic;
+  font-size: 1.02em;
+}
+
+/* Links */
+.markdown-content a {
+  color: #00ffff;
+  text-decoration: underline;
+  transition: opacity 0.2s;
+}
+
+.markdown-content a:hover {
+  opacity: 0.8;
+}
+
+/* Blockquotes */
+.markdown-content blockquote {
+  border-left: 4px solid rgba(0, 255, 255, 0.5);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Tables */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.markdown-content th {
+  background-color: rgba(0, 255, 255, 0.1);
+  font-weight: 600;
+}
+
+/* Horizontal rules */
+.markdown-content hr {
+  border: none;
+  border-top: 1px solid rgba(0, 255, 255, 0.3);
+  margin: 2rem 0;
+}
+
+/* Special emphasis for key answers/results */
+.markdown-content p strong:first-child:last-child {
+  display: inline-block;
+  font-size: 1.2em;
+  padding: 0.5rem 1rem;
+  margin: 0.5rem 0;
+  background: rgba(0, 255, 255, 0.1);
+  border: 2px solid rgba(0, 255, 255, 0.5);
+  border-radius: 0.5rem;
+  text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+}
+
+/* Highlighted sections with background */
+.markdown-content blockquote strong {
+  background: rgba(0, 255, 255, 0.15);
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem;
+}
+
+/* Code emphasis within text */
+.markdown-content p code {
+  font-size: 1.05em;
+  font-weight: 600;
+  background-color: rgba(0, 255, 255, 0.2);
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}
