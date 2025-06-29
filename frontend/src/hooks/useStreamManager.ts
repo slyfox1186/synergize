@@ -29,7 +29,6 @@ export class StreamManager {
   private scrollingEnabled: boolean = true;
   private scrollableParent: HTMLElement | null = null;
   private scrollListener: (() => void) | null = null;
-  private isFirstContent: boolean = true;
   private lastScrollCheck: number = 0;
   private userHasScrolled: boolean = false;
   private ignoreNextScrollEvent: boolean = false;
@@ -226,7 +225,6 @@ export class StreamManager {
     
     // Reset state for new content
     this.scrollingEnabled = true;
-    this.isFirstContent = true;
     this.userHasScrolled = false;
     this.ignoreNextScrollEvent = false;
   }
@@ -255,12 +253,13 @@ export class StreamManager {
       this.userHasScrolled = false;
     }
     
-    // Use instant scrolling for first content, smooth for subsequent
-    const behavior = this.isFirstContent ? 'instant' : 'smooth';
-    this.isFirstContent = false;
+    // Use instant scrolling for streaming content to avoid interrupting
+    // smooth scroll animations, which can cause jank or state issues
+    const behavior = 'instant';
     
-    // Schedule scroll for next frame to ensure content is rendered
-    requestAnimationFrame(() => {
+    // Schedule scroll for the next event loop tick to ensure the layout
+    // has been updated with the new content
+    setTimeout(() => {
       if (this.scrollableParent && this.scrollingEnabled) {
         const { scrollHeight } = this.scrollableParent;
         this.scrollableParent.scrollTo({
@@ -268,7 +267,7 @@ export class StreamManager {
           behavior: behavior as ScrollBehavior
         });
       }
-    });
+    }, 0);
   }
 
   checkScrollPosition(): void {

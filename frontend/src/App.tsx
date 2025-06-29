@@ -21,6 +21,18 @@ function App(): JSX.Element {
     sseService.disconnect();
     useCollaborationStore.getState().reset();
     
+    // Clear any potential stale state from previous sessions
+    useCollaborationStore.getState().setSessionId('');
+    
+    // Emergency cleanup: Force close any lingering EventSource connections
+    // This is aggressive but necessary to prevent stale reconnect attempts
+    try {
+      // Clear any existing intervals/timeouts that might be running
+      for (let i = 1; i < 99999; i++) window.clearTimeout(i);
+    } catch (e) {
+      // Ignore errors, this is just aggressive cleanup
+    }
+    
     logger.info('Checking backend readiness...');
     
     // Function to check if backend is ready
