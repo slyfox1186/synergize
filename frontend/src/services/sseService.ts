@@ -16,32 +16,58 @@ export class SSEService {
     }
 
     const url = `/api/synergize/stream/${sessionId}`;
-    logger.info('Connecting to:', url);
+    const connectionStartTime = Date.now();
+    
+    logger.info('SSE connection initiated', {
+      sessionId,
+      url,
+      reconnectAttempt: this.reconnectAttempts > 0 ? this.reconnectAttempts : undefined
+    });
+    
     this.eventSource = new EventSource(url);
 
     this.eventSource.onopen = (): void => {
-      logger.info('SSE connection established');
+      const connectionTime = Date.now() - connectionStartTime;
+      logger.info('SSE connection established', {
+        sessionId,
+        connectionTimeMs: connectionTime,
+        wasReconnect: this.reconnectAttempts > 0,
+        reconnectAttempts: this.reconnectAttempts
+      });
       this.reconnectAttempts = 0;
       useCollaborationStore.getState().setConnected(true);
     };
 
     this.eventSource.onmessage = (event): void => {
-      logger.debug('Message received:', event.data);
       try {
         const message: SSEMessage = JSON.parse(event.data);
+        logger.debug('Message received', {
+          type: message.type,
+          payloadSize: JSON.stringify(message.payload).length,
+          hasTokens: message.type === SSEMessageType.TOKEN_CHUNK
+        });
         this.handleMessage(message);
         onMessage(message);
       } catch (error) {
-        logger.error('Failed to parse SSE message:', error);
+        logger.error('Failed to parse SSE message', error, {
+          rawData: event.data.substring(0, 200),
+          eventType: event.type
+        });
       }
     };
 
     this.eventSource.onerror = (error): void => {
-      logger.error('SSE error occurred:', error);
+      const readyState = this.eventSource?.readyState;
+      logger.error('SSE connection error', error, {
+        sessionId,
+        readyState,
+        willReconnect: readyState === EventSource.CLOSED && this.reconnectAttempts < this.maxReconnectAttempts,
+        connectionDuration: Date.now() - connectionStartTime
+      });
+      
       useCollaborationStore.getState().setConnected(false);
       
-      if (this.eventSource?.readyState === EventSource.CLOSED) {
-        logger.info('Connection closed, attempting reconnect...');
+      if (readyState === EventSource.CLOSED) {
         this.handleReconnect(sessionId, onMessage);
       }
     };
@@ -89,6 +115,11 @@ export class SSEService {
 
   private handleReconnect(sessionId: string, onMessage: (message: SSEMessage) => void): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      logger.error('Maximum reconnection attempts exceeded', undefined, {
+        sessionId,
+        attempts: this.reconnectAttempts,
+        maxAttempts: this.maxReconnectAttempts
+      });
       useCollaborationStore.getState().setError('Connection lost. Please refresh the page.');
       return;
     }
@@ -96,7 +127,12 @@ export class SSEService {
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
 
-    // Reconnecting after delay
+    logger.info('Scheduling reconnection', {
+      sessionId,
+      attempt: this.reconnectAttempts,
+      delayMs: delay,
+      maxAttempts: this.maxReconnectAttempts
+    });
     
     setTimeout(() => {
       this.connect(sessionId, onMessage);
@@ -105,6 +141,10 @@ export class SSEService {
 
   disconnect(): void {
     if (this.eventSource) {
+      logger.info('Disconnecting SSE', {
+        readyState: this.eventSource.readyState,
+        reconnectAttempts: this.reconnectAttempts
+      });
       this.eventSource.close();
       this.eventSource = null;
       useCollaborationStore.getState().setConnected(false);

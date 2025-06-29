@@ -30,6 +30,8 @@ export class StreamManager {
   private scrollableParent: HTMLElement | null = null;
   private scrollListener: (() => void) | null = null;
   private isFirstContent: boolean = true;
+  private lastScrollCheck: number = 0;
+  private userHasScrolled: boolean = false;
 
   constructor(containerRef: React.RefObject<HTMLDivElement | null>) {
     this.containerRef = containerRef;
@@ -43,9 +45,21 @@ export class StreamManager {
     // Find the scrollable parent
     this.scrollableParent = container.closest('.overflow-y-auto') as HTMLElement;
     if (!this.scrollableParent) {
-      // Try again later when DOM is fully ready
-      setTimeout(() => this.initializeScrollDetection(), 100);
-      return;
+      // Try to find it in parent elements
+      let parent = container.parentElement;
+      while (parent && !this.scrollableParent) {
+        if (parent.classList.contains('overflow-y-auto')) {
+          this.scrollableParent = parent;
+          break;
+        }
+        parent = parent.parentElement;
+      }
+      
+      if (!this.scrollableParent) {
+        // Try again later if DOM is still loading
+        setTimeout(() => this.initializeScrollDetection(), 50);
+        return;
+      }
     }
 
     // Remove existing listener if any
@@ -53,46 +67,46 @@ export class StreamManager {
       this.scrollableParent.removeEventListener('scroll', this.scrollListener);
     }
 
-    let lastScrollTop = this.scrollableParent.scrollTop;
-    let ticking = false;
-
-    // Add scroll listener to detect when user scrolls to bottom
+    // Add scroll listener to detect user interaction
     this.scrollListener = (): void => {
-      if (!this.scrollableParent || ticking) return;
+      if (!this.scrollableParent) return;
       
-      ticking = true;
-      // Use requestAnimationFrame to avoid blocking other events
-      requestAnimationFrame(() => {
-        if (!this.scrollableParent) {
-          ticking = false;
-          return;
-        }
-        
-        const { scrollTop, scrollHeight, clientHeight } = this.scrollableParent;
-        const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 10; // 10px tolerance
-        const isScrollingDown = scrollTop > lastScrollTop;
-        
-        // Re-enable autoscroll if user scrolls to bottom
-        if (isAtBottom) {
-          if (!this.scrollingEnabled) {
-            this.scrollingEnabled = true;
-            logger.debug('Auto-scroll re-enabled - user scrolled to bottom');
-          }
-        }
-        // Disable autoscroll if user scrolls up away from bottom
-        else if (!isAtBottom && this.scrollingEnabled && !isScrollingDown) {
-          this.scrollingEnabled = false;
-          logger.debug('Auto-scroll disabled - user scrolled up');
-        }
-        
-        lastScrollTop = scrollTop;
-        ticking = false;
-      });
+      const now = Date.now();
+      // Throttle scroll checks to every 100ms
+      if (now - this.lastScrollCheck < 100) return;
+      this.lastScrollCheck = now;
+      
+      const { scrollTop, scrollHeight, clientHeight } = this.scrollableParent;
+      const distanceFromBottom = scrollHeight - clientHeight - scrollTop;
+      const isAtBottom = distanceFromBottom < 50; // 50px tolerance for better UX
+      
+      // Mark that user has interacted with scroll
+      this.userHasScrolled = true;
+      
+      // Re-enable autoscroll if user scrolls near bottom
+      if (isAtBottom && !this.scrollingEnabled) {
+        this.scrollingEnabled = true;
+        this.userHasScrolled = false; // Reset user interaction flag
+        logger.debug('Auto-scroll re-enabled', { distanceFromBottom });
+      }
+      // Disable autoscroll if user scrolls away from bottom
+      else if (!isAtBottom && this.scrollingEnabled && distanceFromBottom > 100) {
+        this.scrollingEnabled = false;
+        logger.debug('Auto-scroll disabled', { distanceFromBottom });
+      }
     };
 
     this.scrollableParent.addEventListener('scroll', this.scrollListener, { 
-      passive: true
+      passive: true,
+      capture: false
     });
+    
+    // Set initial scroll state
+    if (this.scrollableParent) {
+      const { scrollTop, scrollHeight, clientHeight } = this.scrollableParent;
+      const isAtBottom = scrollHeight - clientHeight - scrollTop < 50;
+      this.scrollingEnabled = isAtBottom;
+    }
   }
 
   appendTokens(chunk: TokenChunk): void {
@@ -140,22 +154,8 @@ export class StreamManager {
         contentContainer.innerHTML = rendered;
 
         // Auto-scroll to bottom (only for non-synthesis content and when enabled)
-        const container = this.containerRef.current;
-        if (container && this.currentModelId !== 'synthesis' && this.scrollingEnabled) {
-          // Find the scrollable parent container (has overflow-y-auto)
-          const scrollableParent = container.closest('.overflow-y-auto') as HTMLElement;
-          if (scrollableParent) {
-            // Use instant scrolling for first content, smooth for subsequent
-            const behavior = this.isFirstContent ? 'instant' : 'smooth';
-            this.isFirstContent = false;
-            
-            requestAnimationFrame(() => {
-              scrollableParent.scrollTo({
-                top: scrollableParent.scrollHeight,
-                behavior: behavior as ScrollBehavior
-              });
-            });
-          }
+        if (this.currentModelId !== 'synthesis') {
+          this.performAutoScroll();
         }
       }
     }
@@ -189,10 +189,9 @@ export class StreamManager {
       container.appendChild(phaseDiv);
       this.phaseContainers.set(key, content);
       
-      // Initialize scroll detection only when we start adding content
-      if (!this.scrollableParent && this.containerRef.current) {
-        // Use a small delay to ensure DOM is ready
-        setTimeout(() => this.initializeScrollDetection(), 10);
+      // Initialize scroll detection when we start adding content
+      if (!this.scrollableParent) {
+        this.initializeScrollDetection();
       }
     }
   }
@@ -210,6 +209,7 @@ export class StreamManager {
     // Reset state for new content
     this.scrollingEnabled = true;
     this.isFirstContent = true;
+    this.userHasScrolled = false;
   }
 
   setScrollingEnabled(enabled: boolean): void {
@@ -218,6 +218,64 @@ export class StreamManager {
 
   isScrollingEnabled(): boolean {
     return this.scrollingEnabled;
+  }
+
+  private performAutoScroll(): void {
+    if (!this.scrollingEnabled || !this.scrollableParent) return;
+    
+    // Don't auto-scroll if user has recently interacted
+    if (this.userHasScrolled) {
+      const { scrollTop, scrollHeight, clientHeight } = this.scrollableParent;
+      const isNearBottom = scrollHeight - clientHeight - scrollTop < 100;
+      if (!isNearBottom) return;
+    }
+    
+    // Use instant scrolling for first content, smooth for subsequent
+    const behavior = this.isFirstContent ? 'instant' : 'smooth';
+    this.isFirstContent = false;
+    
+    // Schedule scroll for next frame to ensure content is rendered
+    requestAnimationFrame(() => {
+      if (this.scrollableParent && this.scrollingEnabled) {
+        const { scrollHeight } = this.scrollableParent;
+        this.scrollableParent.scrollTo({
+          top: scrollHeight,
+          behavior: behavior as ScrollBehavior
+        });
+        // Reset user interaction flag after auto-scroll
+        this.userHasScrolled = false;
+      }
+    });
+  }
+
+  checkScrollPosition(): void {
+    // Force re-check current scroll position and update autoscroll state
+    if (!this.scrollableParent) {
+      this.initializeScrollDetection();
+      return;
+    }
+    
+    const { scrollTop, scrollHeight, clientHeight } = this.scrollableParent;
+    const distanceFromBottom = scrollHeight - clientHeight - scrollTop;
+    const wasEnabled = this.scrollingEnabled;
+    
+    // Update scroll state based on current position
+    this.scrollingEnabled = distanceFromBottom < 50;
+    
+    if (wasEnabled !== this.scrollingEnabled) {
+      logger.debug('Scroll state updated', { 
+        enabled: this.scrollingEnabled, 
+        distanceFromBottom 
+      });
+    }
+    
+    // If we're at bottom, perform an immediate scroll to ensure we're fully aligned
+    if (this.scrollingEnabled && distanceFromBottom > 0 && distanceFromBottom < 50) {
+      this.scrollableParent.scrollTo({
+        top: scrollHeight,
+        behavior: 'instant' as ScrollBehavior
+      });
+    }
   }
 
   cleanup(): void {
@@ -230,7 +288,7 @@ export class StreamManager {
   }
 }
 
-export function useStreamManager({ containerRef, onPhaseChange }: StreamManagerOptions): { appendTokens: (chunk: TokenChunk) => void; clear: () => void; setScrollingEnabled: (enabled: boolean) => void } {
+export function useStreamManager({ containerRef, onPhaseChange }: StreamManagerOptions): { appendTokens: (chunk: TokenChunk) => void; clear: () => void; setScrollingEnabled: (enabled: boolean) => void; checkScrollPosition: () => void } {
   const managerRef = useRef<StreamManager | null>(null);
 
   useEffect(() => {
@@ -267,5 +325,11 @@ export function useStreamManager({ containerRef, onPhaseChange }: StreamManagerO
     }
   }, []);
 
-  return { appendTokens, clear, setScrollingEnabled };
+  const checkScrollPosition = useCallback(() => {
+    if (managerRef.current) {
+      managerRef.current.checkScrollPosition();
+    }
+  }, []);
+
+  return { appendTokens, clear, setScrollingEnabled, checkScrollPosition };
 }

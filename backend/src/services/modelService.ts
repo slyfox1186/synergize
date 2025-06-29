@@ -39,7 +39,10 @@ export class ModelService {
     try {
       // Initialize LLama library
       this.llama = await getLlama();
-      this.logger.info('🦙 LLama library initialized');
+      this.logger.info('🦙 LLama library initialized', {
+        gpuLayers: config.model.gpuLayers,
+        modelsPath: this.modelsPath
+      });
 
       // Ensure models directory exists
       await fs.mkdir(this.modelsPath, { recursive: true });
@@ -52,7 +55,16 @@ export class ModelService {
         await this.loadModel(modelId, modelConfig);
       }
       
-      this.logger.info(`✅ Initialized ${this.models.size} models with context management`);
+      this.logger.info(`✅ Model service initialized`, {
+        totalModels: this.models.size,
+        totalContexts: this.models.size * config.model.contextsPerModel,
+        contextConfig: {
+          contextSize: config.model.contextSize,
+          batchSize: config.model.batchSize,
+          contextsPerModel: config.model.contextsPerModel,
+          threads: config.model.threads
+        }
+      });
     } catch (error) {
       this.logger.error('Failed to initialize model service:', error);
       throw error;
@@ -60,8 +72,18 @@ export class ModelService {
   }
 
   private async loadModel(modelId: string, modelConfig: ModelConfig): Promise<void> {
+    const loadStartTime = Date.now();
+    const fileStats = await fs.stat(modelConfig.path);
+    const fileSizeMB = Math.round(fileStats.size / 1024 / 1024);
+    
     try {
-      this.logger.info(`🔄 Loading model: ${modelConfig.name}`);
+      this.logger.info(`🔄 Loading model`, {
+        modelId,
+        modelName: modelConfig.name,
+        modelPath: modelConfig.path,
+        fileSizeMB,
+        contextSize: modelConfig.contextSize
+      });
 
       if (!this.llama) {
         throw new Error('Llama library not initialized');
@@ -97,7 +119,21 @@ export class ModelService {
       };
 
       this.modelInstances.set(modelId, modelInstance);
-      this.logger.info(`✅ Loaded ${modelConfig.name} with ${availableContexts.length} contexts`);
+      
+      const loadTimeMs = Date.now() - loadStartTime;
+      const memoryUsage = process.memoryUsage();
+      
+      this.logger.info(`✅ Model loaded successfully`, {
+        modelId,
+        modelName: modelConfig.name,
+        loadTimeMs,
+        contextPoolSize: availableContexts.length,
+        memoryUsage: {
+          heapUsedMB: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+          heapTotalMB: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+          externalMB: Math.round(memoryUsage.external / 1024 / 1024)
+        }
+      });
 
     } catch (error) {
       this.logger.error(`Failed to load model ${modelId}:`, error);
@@ -193,7 +229,13 @@ export class ModelService {
 
     modelInstance.busyContexts.add(context);
     
-    this.logger.debug(`📤 Acquired context for ${modelId} (${modelInstance.availableContexts.length} remaining)`);
+    this.logger.info(`📤 Context acquired`, {
+      modelId,
+      availableContexts: modelInstance.availableContexts.length,
+      busyContexts: modelInstance.busyContexts.size,
+      totalContexts: config.model.contextsPerModel,
+      utilizationPercent: Math.round((modelInstance.busyContexts.size / config.model.contextsPerModel) * 100)
+    });
     return context;
   }
 

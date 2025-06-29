@@ -30,7 +30,9 @@
     "@typescript-eslint/no-misused-promises": "off",
     "@typescript-eslint/require-await": "off",
     "@typescript-eslint/no-floating-promises": "off",
-    "@typescript-eslint/prefer-nullish-coalescing": "off"
+    "@typescript-eslint/prefer-nullish-coalescing": "off",
+    "no-implicit-coercion": ["warn", { "boolean": true, "number": false, "string": false }],
+    "@typescript-eslint/no-non-null-assertion": "warn"
   },
   "ignorePatterns": [
     "node_modules/",

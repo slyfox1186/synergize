@@ -52,7 +52,7 @@ export class LLMAnalyticsService {
         return JSON.parse(cached);
       }
     } catch (error) {
-      this.logger.warn('Cache retrieval error:', error);
+      this.logger.warn('Cache retrieval error:', { error });
     }
     return null;
   }
@@ -69,7 +69,7 @@ export class LLMAnalyticsService {
       );
       this.logger.debug(`💾 Cached result for ${key}`);
     } catch (error) {
-      this.logger.warn('Cache storage error:', error);
+      this.logger.warn('Cache storage error:', { error });
     }
   }
 
@@ -170,16 +170,40 @@ Focus on:
         
         // Parse JSON response
         try {
-          const parsed = JSON.parse(response.match(/\[[\s\S]*\]/)?.[0] || '[]');
-          allScores.push(...parsed);
+          const jsonMatch = response.match(/\[[\s\S]*\]/)?.[0];
+          this.logger.debug('🔍 Rerank response JSON match:', { jsonMatch, fullResponse: response.substring(0, 200) });
+          
+          if (!jsonMatch) {
+            throw new Error('No JSON array found in response');
+          }
+          
+          const parsed = JSON.parse(jsonMatch);
+          
+          if (!Array.isArray(parsed)) {
+            throw new Error('Parsed result is not an array');
+          }
+          
+          // Validate each item has required properties
+          const validScores = parsed.filter(item => 
+            item && typeof item.id === 'string' && typeof item.score === 'number'
+          );
+          
+          this.logger.debug('🔍 Valid scores parsed:', { count: validScores.length, total: parsed.length });
+          allScores.push(...validScores);
+          
         } catch (parseError) {
-          this.logger.warn('Failed to parse reranking response, using fallback');
+          this.logger.error('Failed to parse reranking response:', { 
+            error: parseError, 
+            response: response.substring(0, 500),
+            batch: batch.map(d => d.id)
+          });
+          
           // Fallback scoring
           batch.forEach((doc, idx) => {
             allScores.push({
               id: doc.id,
               score: 1 - (idx * 0.1), // Simple decay
-              reason: 'Fallback scoring'
+              reason: 'Fallback scoring due to parse error'
             });
           });
         }

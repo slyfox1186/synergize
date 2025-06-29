@@ -18,7 +18,20 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': {
           target: env.VITE_API_URL || 'http://localhost:8000',
-          changeOrigin: true
+          changeOrigin: true,
+          ws: true, // Enable WebSocket proxying for SSE
+          timeout: 0, // Disable timeout for long-running SSE connections
+          proxyTimeout: 0, // Disable proxy timeout
+          configure: (proxy) => {
+            // Configure proxy for SSE connections
+            proxy.on('proxyReq', (proxyReq, req) => {
+              if (req.url?.includes('/stream/')) {
+                // Set headers for SSE
+                proxyReq.setHeader('Cache-Control', 'no-cache');
+                proxyReq.setHeader('Connection', 'keep-alive');
+              }
+            });
+          }
         }
       }
     },

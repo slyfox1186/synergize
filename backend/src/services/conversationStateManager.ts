@@ -106,7 +106,15 @@ export class ConversationStateManager {
     };
 
     await this.saveConversationState(state);
-    this.logger.info(`🎬 Started conversation ${sessionId} with models: ${modelIds.join(', ')}`);
+    
+    this.logger.info(`🎬 Conversation created`, {
+      sessionId,
+      originalQuery: originalQuery.substring(0, 100),
+      participants: modelIds,
+      initialPhase: state.currentPhase,
+      contextWindowSize: config.model.contextSize,
+      compressionEnabled: this.conversationCompressor !== null
+    });
     
     return state;
   }
@@ -263,11 +271,25 @@ export class ConversationStateManager {
     const systemTokens = this.tokenCounter.countTokens(systemPrompt);
     const totalPromptTokens = actualContextTokens + promptTokens + systemTokens;
     
-    this.logger.info(`📊 Context built: ${actualContextTokens}/${allocation.historyTokenBudget} history tokens used`);
-    this.logger.info(`📊 Total prompt composition: ${totalPromptTokens} tokens (history: ${actualContextTokens}, prompt: ${promptTokens}, system: ${systemTokens})`);
-    
     // Recalculate generation tokens based on actual prompt size
     const actualGenerationTokens = config.model.contextSize - totalPromptTokens - allocation.safetyMarginTokens;
+    
+    this.logger.info(`📊 Context allocation finalized`, {
+      sessionId: state.sessionId,
+      modelId,
+      phase: state.currentPhase,
+      tokenAllocation: {
+        historyTokensUsed: actualContextTokens,
+        historyTokensBudget: allocation.historyTokenBudget,
+        promptTokens,
+        systemTokens,
+        totalPromptTokens,
+        generationTokensAvailable: actualGenerationTokens,
+        contextUtilization: Math.round((totalPromptTokens / config.model.contextSize) * 100)
+      },
+      turnsIncluded: relevantHistory.length,
+      totalTurns: state.turns.length
+    });
     
     // Update allocation with actual values
     const updatedAllocation = {
@@ -310,7 +332,13 @@ export class ConversationStateManager {
     const state = await this.getConversationState(sessionId);
     if (!state) return;
 
-    this.logger.info(`🗜️ Starting batch compression for session ${sessionId}`);
+    const compressionStartTime = Date.now();
+    this.logger.info(`🗜️ Starting batch compression`, {
+      sessionId,
+      totalTurns: state.turns.length,
+      currentPhase: state.currentPhase,
+      turnsToCompress: state.turns.filter(t => t.metadata.tokenCount > 200).length
+    });
     
     // Get uncompressed turns from current phase
     const uncompressedTurns = state.turns.filter(turn => {
@@ -362,7 +390,20 @@ export class ConversationStateManager {
         }
       }
 
-      this.logger.info(`🗜️ Batch compression complete: ${compressionResults.size} turns processed`);
+      const compressionTime = Date.now() - compressionStartTime;
+      const totalOriginalTokens = uncompressedTurns.reduce((sum, t) => sum + t.metadata.tokenCount, 0);
+      const totalCompressedTokens = Array.from(compressionResults.values())
+        .reduce((sum, r) => sum + this.tokenCounter.countTokens(r.compressed), 0);
+      
+      this.logger.info(`🗜️ Batch compression complete`, {
+        sessionId,
+        turnsProcessed: compressionResults.size,
+        compressionTimeMs: compressionTime,
+        totalTokensBefore: totalOriginalTokens,
+        totalTokensAfter: totalCompressedTokens,
+        totalTokensSaved: totalOriginalTokens - totalCompressedTokens,
+        averageCompressionRatio: totalCompressedTokens / totalOriginalTokens
+      });
     } catch (error) {
       this.logger.error('Batch compression failed:', error);
     }

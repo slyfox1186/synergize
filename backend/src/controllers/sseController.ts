@@ -6,10 +6,12 @@ import { CollaborationOrchestrator } from '../services/collaborationOrchestrator
 
 import { SSEMessage, SSEMessageType } from '../models/types.js';
 import { config } from '../config.js';
+import { createLogger } from '../utils/logger.js';
 
 export class SSEController {
   private readonly activeConnections = new Map<string, Response>();
   private readonly heartbeatIntervals = new Map<string, NodeJS.Timeout>();
+  private readonly logger = createLogger('SSEController');
   
   constructor(
     private readonly modelService: ModelService,
@@ -18,6 +20,15 @@ export class SSEController {
 
   async handleStream(req: Request, res: Response): Promise<void> {
     const { sessionId } = req.params;
+    const clientIp = req.ip || req.connection.remoteAddress;
+    const startTime = Date.now();
+    
+    this.logger.info('SSE connection initiated', {
+      sessionId,
+      clientIp,
+      userAgent: req.headers['user-agent'],
+      activeConnections: this.activeConnections.size
+    });
     
     // Set SSE headers
     res.writeHead(200, {
@@ -30,6 +41,12 @@ export class SSEController {
 
     // Store connection
     this.activeConnections.set(sessionId, res);
+    
+    this.logger.info('SSE connection established', {
+      sessionId,
+      totalActiveConnections: this.activeConnections.size,
+      connectionDuration: Date.now() - startTime
+    });
 
     // Send initial connection message
     this.sendMessage(res, {
@@ -52,7 +69,17 @@ export class SSEController {
     );
 
     // Start collaboration
+    this.logger.info('Starting collaboration', {
+      sessionId,
+      orchestratorInitialized: true
+    });
+    
     orchestrator.startCollaboration(sessionId).catch((error: Error) => {
+      this.logger.error('Collaboration failed', error, {
+        sessionId,
+        connectionDuration: Date.now() - startTime
+      });
+      
       this.sendMessage(res, {
         type: SSEMessageType.ERROR,
         payload: { error: error.message },
@@ -61,11 +88,21 @@ export class SSEController {
 
     // Handle client disconnect
     req.on('close', () => {
+      this.logger.info('SSE connection closed by client', {
+        sessionId,
+        connectionDuration: Date.now() - startTime,
+        reason: 'client_disconnect'
+      });
       this.cleanup(sessionId);
       orchestrator.cancel();
     });
 
-    req.on('error', () => {
+    req.on('error', (error) => {
+      this.logger.error('SSE connection error', error, {
+        sessionId,
+        connectionDuration: Date.now() - startTime,
+        reason: 'connection_error'
+      });
       this.cleanup(sessionId);
       orchestrator.cancel();
     });
@@ -85,6 +122,14 @@ export class SSEController {
     }
 
     // Remove connection
+    const wasActive = this.activeConnections.has(sessionId);
     this.activeConnections.delete(sessionId);
+    
+    this.logger.info('SSE connection cleanup completed', {
+      sessionId,
+      wasActive,
+      remainingConnections: this.activeConnections.size,
+      hadHeartbeat: interval !== undefined
+    });
   }
 }

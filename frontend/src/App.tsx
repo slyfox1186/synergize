@@ -19,7 +19,7 @@ function App(): JSX.Element {
     // Fetch available models on mount and auto-select them
     fetch('/api/models')
       .then(res => {
-        logger.debug('Models API response status:', res.status);
+        logger.debug('Models API response status', { status: res.status });
         return res.json();
       })
       .then(data => {
@@ -45,13 +45,13 @@ function App(): JSX.Element {
               selectedIds = [data.models[0].id, data.models[1].id];
             }
             
-            logger.info('Auto-selecting models:', selectedIds);
+            logger.info('Auto-selecting models', { selectedIds });
             store.selectModels(selectedIds);
           } else {
-            logger.error('Not enough models found:', data.models.length);
+            logger.error('Not enough models found', undefined, { modelCount: data.models.length });
           }
         } else {
-          logger.error('Invalid models data:', data);
+          logger.error('Invalid models data', undefined, { data });
         }
       })
       .catch((err: Error) => {
