@@ -9,8 +9,11 @@ A multi-model AI collaboration system where Large Language Models work together 
 
 ## 📸 Screenshots
 
+#### PHASE: `BRAINSTORM`
 ![Screenshot 01](https://i.imgur.com/CZ2Zkfg.png)
+#### PHASE: `CRITIQUE`
 ![Screenshot 02](https://i.imgur.com/7kAYjt5.png)
+#### PHASE: `REVISE`
 ![Screenshot 03](https://i.imgur.com/IbdPAu8.png)
 
 ## 🌟 Key Features
