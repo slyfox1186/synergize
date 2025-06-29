@@ -16,7 +16,7 @@ Before installing Synergize, ensure you have:
 ### Optional but Recommended
 
 - **NVIDIA GPU** with CUDA support for faster inference
-- **CUDA Toolkit** 11.7+ ([Download](https://developer.nvidia.com/cuda-downloads))
+- **CUDA Toolkit** 12.4+ ([Download](https://developer.nvidia.com/cuda-downloads))
 
 ## 🚀 Quick Install
 
