@@ -1112,6 +1112,9 @@ This is a critical correction - ensure accuracy!`;
     // Format prompt according to model requirements
     const systemPrompt = this.getSystemPrompt(phase, modelId);
     const formatted = PromptFormatter.formatPrompt(modelConfig, systemPrompt, fullPrompt, skipNoThink);
+    
+    // Debug stop tokens
+    this.logger.debug(`🛑 Stop tokens for ${modelId}: ${JSON.stringify(formatted.stopTokens)}`);
 
     // Get a sequence for this generation
     const sequence = context.getSequence();
@@ -1207,7 +1210,9 @@ This is a critical correction - ensure accuracy!`;
       }
       
       // Generate response with formatted prompt
+      this.logger.info(`🚀 Starting generation with stop tokens: ${JSON.stringify(formatted.stopTokens)}`);
       const response = await session.prompt(formatted.prompt, generationOptions);
+      this.logger.info(`✅ Generation complete. Raw output length: ${response.length}`);
 
       if (this.cancelled) return '';
       
