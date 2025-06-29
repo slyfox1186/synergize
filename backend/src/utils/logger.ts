@@ -226,6 +226,11 @@ export class Logger {
       return value.length > 100 ? `"${value.substring(0, 100)}..."` : `"${value}"`;
     }
     
+    // Color numeric values bright green
+    if (typeof value === 'number') {
+      return `\x1b[92m${value}\x1b[0m`; // Bright green
+    }
+    
     return String(value);
   }
 }

@@ -9,6 +9,7 @@ export class SSEService {
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 5;
   private readonly reconnectDelay = 1000;
+  private reconnectTimeoutId: number | null = null;
 
   connect(sessionId: string, onMessage: (message: SSEMessage) => void): void {
     if (this.eventSource) {
@@ -134,12 +135,20 @@ export class SSEService {
       maxAttempts: this.maxReconnectAttempts
     });
     
-    setTimeout(() => {
+    this.reconnectTimeoutId = window.setTimeout(() => {
+      this.reconnectTimeoutId = null;
       this.connect(sessionId, onMessage);
     }, delay);
   }
 
   disconnect(): void {
+    // Clear any pending reconnection timeouts
+    if (this.reconnectTimeoutId !== null) {
+      window.clearTimeout(this.reconnectTimeoutId);
+      this.reconnectTimeoutId = null;
+      logger.info('Cleared pending reconnection timeout');
+    }
+    
     if (this.eventSource) {
       logger.info('Disconnecting SSE', {
         readyState: this.eventSource.readyState,
@@ -149,6 +158,9 @@ export class SSEService {
       this.eventSource = null;
       useCollaborationStore.getState().setConnected(false);
     }
+    
+    // Reset reconnection state to prevent stale reconnect attempts
+    this.reconnectAttempts = 0;
   }
 
   isConnected(): boolean {
