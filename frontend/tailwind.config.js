@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        jarvis: {
+        synergy: {
           primary: '#00d4ff',
           secondary: '#ff6b00',
           accent: '#ffd700',

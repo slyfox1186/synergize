@@ -4,6 +4,28 @@
   line-height: 1.6;
 }
 
+/* MathJax styling for synergy theme */
+.markdown-content .MathJax {
+  color: #e0e0e0 !important; /* synergy-text color */
+}
+
+.markdown-content .MathJax_Display {
+  margin: 1rem 0 !important;
+  text-align: center !important;
+}
+
+.markdown-content .MathJax svg {
+  color: #00d4ff !important; /* synergy-primary color for math expressions */
+}
+
+.markdown-content .MathJax_Error {
+  color: #ff6b6b !important;
+  background-color: rgba(255, 107, 107, 0.1) !important;
+  border: 1px solid #ff6b6b !important;
+  border-radius: 0.25rem !important;
+  padding: 0.25rem !important;
+}
+
 /* Code blocks */
 .markdown-content pre {
   background-color: rgba(0, 0, 0, 0.3);

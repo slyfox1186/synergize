@@ -158,6 +158,8 @@ function App(): JSX.Element {
         
         if (isReady) {
           logger.info('Backend ready! Models are loaded. Fetching model list...');
+          // Backend is ready, mark as connected
+          useCollaborationStore.getState().setConnected(true);
           // Backend is ready with models loaded, now fetch models via proxy
           try {
             const res = await fetch('/api/models');
@@ -220,20 +222,38 @@ function App(): JSX.Element {
     // Start the health check process
     waitForBackendAndFetchModels().catch(err => {
       logger.error('Health check process failed:', err);
+      useCollaborationStore.getState().setConnected(false);
     });
 
+    // Set up periodic health check to monitor backend status
+    const healthCheckInterval = setInterval(async () => {
+      const isHealthy = await checkBackendHealth();
+      const currentlyConnected = useCollaborationStore.getState().isConnected;
+      
+      // Only update if status changed to avoid unnecessary re-renders
+      if (isHealthy !== currentlyConnected && !useCollaborationStore.getState().isStreaming) {
+        useCollaborationStore.getState().setConnected(isHealthy);
+        if (!isHealthy) {
+          logger.warn('Backend connection lost');
+        } else {
+          logger.info('Backend connection restored');
+        }
+      }
+    }, 5000); // Check every 5 seconds
+
     return (): void => {
+      clearInterval(healthCheckInterval);
       sseService.disconnect();
     };
   }, [sseService]);
 
   return (
-    <div className="min-h-screen bg-jarvis-darker">
+    <div className="min-h-screen bg-synergy-darker">
       {/* Header */}
-      <header className="border-b border-jarvis-primary/20 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-synergy-primary/20 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-tech font-bold text-jarvis-primary text-glow">
+            <h1 className="text-3xl font-tech font-bold text-synergy-primary text-glow">
               SYNERGIZE
             </h1>
             <div className="flex items-center gap-4">
@@ -254,8 +274,8 @@ function App(): JSX.Element {
 
         {!models.length ? (
           <div className="text-center py-20">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-jarvis-primary"></div>
-            <p className="mt-4 text-jarvis-muted">Loading models...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-synergy-primary"></div>
+            <p className="mt-4 text-synergy-muted">Loading models...</p>
           </div>
         ) : (
           <SynergizerArena sseService={sseService} />

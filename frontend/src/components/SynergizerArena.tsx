@@ -6,6 +6,7 @@ import { SSEService } from '@/services/sseService';
 import { SSEMessage, SSEMessageType, TokenChunk, CollaborationPhase } from '@/types';
 import { createLogger } from '@/utils/logger';
 import { SynchronizedResizablePanels } from './SynchronizedResizablePanels';
+import { MathAwareRenderer, SynthesisMathRenderer } from './MathAwareRenderer';
 
 interface Props {
   sseService: SSEService;
@@ -35,14 +36,16 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
     setSessionId, 
   } = useCollaborationStore();
 
+  // Container refs for panels
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
   const synthesisRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const leftStreamManager = useStreamManager({ containerRef: leftPanelRef });
-  const rightStreamManager = useStreamManager({ containerRef: rightPanelRef });
-  const synthesisStreamManager = useStreamManager({ containerRef: synthesisRef });
+  // Stream manager for content state (no more containerRef!)
+  const streamManager = useStreamManager({});
+  const { streamContents } = streamManager;
+
 
   const [promptInput, setPromptInput] = useState('');
   const [hasScrolledToSynthesis, setHasScrolledToSynthesis] = useState(false);
@@ -54,10 +57,8 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
   useEffect(() => {
     logger.info('SynergizerArena initializing - clearing all content');
     
-    // Clear all stream managers
-    leftStreamManager.clear();
-    rightStreamManager.clear();
-    synthesisStreamManager.clear();
+    // Clear stream manager
+    streamManager.clear();
     
     // Reset all local state
     setPromptInput('');
@@ -146,6 +147,31 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
     }
   }, [hasScrolledToSynthesis, isSynthesisActive]);
 
+  // Simple token processing - just updates state and scrolls after DOM update
+  const processTokens = useCallback((chunk: TokenChunk): void => {
+    // Allow completion signals to pass through, but ignore empty non-completion chunks
+    if (chunk.tokens.length === 0 && !chunk.isComplete) return;
+    
+    // Update state - this includes handling completion signals
+    streamManager.appendTokens(chunk);
+    
+    // Skip scrolling logic for completion signals
+    if (chunk.isComplete) return;
+    
+    // Double RAF to ensure React has completed render cycle
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (chunk.modelId === selectedModels?.[0] && leftPanelRef.current) {
+          const container = leftPanelRef.current;
+          container.scrollTop = container.scrollHeight;
+        } else if (chunk.modelId === selectedModels?.[1] && rightPanelRef.current) {
+          const container = rightPanelRef.current;
+          container.scrollTop = container.scrollHeight;
+        }
+      });
+    });
+  }, [streamManager, selectedModels]);
+
   const handleSSEMessage = useCallback((message: SSEMessage) => {
     // Remove beforeunload warning when collaboration completes
     if (message.type === SSEMessageType.COLLABORATION_COMPLETE) {
@@ -158,53 +184,73 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
     if (message.type === SSEMessageType.TOKEN_CHUNK && isTokenChunk(message.payload)) {
       const chunk = message.payload;
       
+      // Process tokens with proper scrolling
+      processTokens(chunk);
+      
       // Check if this is synthesis content
       if (chunk.modelId === 'synthesis') {
-        synthesisStreamManager.appendTokens(chunk);
         // Mark synthesis as active and trigger scroll on first synthesis token
         if (!isSynthesisActive && chunk.tokens.length > 0) {
           setIsSynthesisActive(true);
-          // Disable auto-scrolling on model panels during synthesis
-          leftStreamManager.setScrollingEnabled(false);
-          rightStreamManager.setScrollingEnabled(false);
         }
         if (!hasScrolledToSynthesis && chunk.tokens.length > 0) {
           scrollToSynthesis();
         }
-      } else if (selectedModels) {
-        // Route tokens to appropriate panel
-        if (chunk.modelId === selectedModels[0]) {
-          leftStreamManager.appendTokens(chunk);
-        } else if (chunk.modelId === selectedModels[1]) {
-          rightStreamManager.appendTokens(chunk);
-        }
       }
     } else if (message.type === SSEMessageType.SYNTHESIS_UPDATE && isTokenChunk(message.payload)) {
       const chunk = message.payload;
-      synthesisStreamManager.appendTokens(chunk);
+      
+      // Process tokens with proper scrolling
+      processTokens(chunk);
+      
       // Mark synthesis as active and trigger scroll for SYNTHESIS_UPDATE messages
       if (!isSynthesisActive && chunk.tokens.length > 0) {
         setIsSynthesisActive(true);
-        // Disable auto-scrolling on model panels during synthesis
-        leftStreamManager.setScrollingEnabled(false);
-        rightStreamManager.setScrollingEnabled(false);
       }
       if (!hasScrolledToSynthesis && chunk.tokens.length > 0) {
         scrollToSynthesis();
       }
     }
-  }, [selectedModels, leftStreamManager, rightStreamManager, synthesisStreamManager, hasScrolledToSynthesis, isSynthesisActive, scrollToSynthesis]);
+  }, [processTokens, hasScrolledToSynthesis, isSynthesisActive, scrollToSynthesis]);
 
+
+  // Updated copy function to work with streamContents
+  const handleCopyContent = async (modelId: string, panelName: string): Promise<void> => {
+    try {
+      // Get content for the specific model from streamContents
+      const contentEntries = Array.from(streamContents.entries())
+        .filter(([key]) => key.endsWith(`-${modelId}`))
+        .map(([, content]) => content.content);
+      
+      if (contentEntries.length === 0) {
+        logger.warn(`No content found for ${panelName}`);
+        return;
+      }
+      
+      // Join all content with separators, preserving LaTeX notation
+      const text = contentEntries.join('\n\n---\n\n');
+      await navigator.clipboard.writeText(text);
+      logger.info(`Copied ${panelName} content to clipboard (${text.length} characters)`);
+      
+    } catch (error) {
+      logger.error(`Failed to copy ${panelName} content:`, error);
+    }
+  };
+
+  // Legacy copy function for synthesis panel
   const handleCopy = async (ref: React.RefObject<HTMLDivElement>, panelName: string): Promise<void> => {
+    if (panelName === 'Synthesis') {
+      // Use streamContents for synthesis
+      return handleCopyContent('synthesis', panelName);
+    }
+    
+    // Fallback to DOM method for other cases
     if (!ref.current) return;
     
     try {
       const text = ref.current.innerText;
       await navigator.clipboard.writeText(text);
       logger.info(`Copied ${panelName} content to clipboard`);
-      
-      // Optional: Show a toast or feedback
-      // You could add a toast notification here
     } catch (error) {
       logger.error(`Failed to copy ${panelName} content:`, error);
     }
@@ -257,17 +303,12 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
     try {
       logger.debug('Clearing previous content');
       // Clear previous content
-      leftStreamManager.clear();
-      rightStreamManager.clear();
-      synthesisStreamManager.clear();
+      streamManager.clear();
 
       // Reset scroll flags for new collaboration
       setHasScrolledToSynthesis(false);
       setIsSynthesisActive(false);
       
-      // Re-enable scrolling on model panels
-      leftStreamManager.setScrollingEnabled(true);
-      rightStreamManager.setScrollingEnabled(true);
       
       // Clear any pending scroll timeout
       if (scrollTimeoutRef.current) {
@@ -328,7 +369,7 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
             onChange={(e) => setPromptInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Enter your prompt here... (Press Enter to submit, Shift+Enter for new line)"
-            className="jarvis-input resize-none overflow-y-auto transition-height duration-150"
+            className="synergy-input resize-none overflow-y-auto transition-height duration-150"
             style={{
               minHeight: '120px',
               lineHeight: '1.5rem'
@@ -339,7 +380,7 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
           {promptInput.trim() && (
             <button
               onClick={handleCopyPrompt}
-              className="absolute top-2 right-2 text-jarvis-accent hover:text-jarvis-primary transition-colors p-1.5 rounded opacity-75 hover:opacity-100"
+              className="absolute top-2 right-2 text-synergy-accent hover:text-synergy-primary transition-colors p-1.5 rounded opacity-75 hover:opacity-100"
               title="Copy prompt to clipboard"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -348,7 +389,7 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
             </button>
           )}
           {/* Line counter */}
-          <div className="absolute bottom-2 right-2 text-jarvis-muted text-xs opacity-50">
+          <div className="absolute bottom-2 right-2 text-synergy-muted text-xs opacity-50">
             {promptInput.length > 0 && `${promptInput.split('\n').length} line${promptInput.split('\n').length !== 1 ? 's' : ''}`}
           </div>
         </div>
@@ -356,12 +397,12 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
           <button
             onClick={handleSubmit}
             disabled={isStreaming || !promptInput.trim()}
-            className="jarvis-button disabled:opacity-50 disabled:cursor-not-allowed"
+            className="synergy-button disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isStreaming ? 'Processing...' : 'Initiate Collaboration'}
           </button>
-          <span className="text-jarvis-muted text-sm">
-            Press <kbd className="px-2 py-1 text-xs bg-jarvis-dark rounded border border-jarvis-muted/30">Enter</kbd> to submit
+          <span className="text-synergy-muted text-sm">
+            Press <kbd className="px-2 py-1 text-xs bg-synergy-dark rounded border border-synergy-muted/30">Enter</kbd> to submit
           </span>
         </div>
       </div>
@@ -370,39 +411,74 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
       <SynchronizedResizablePanels
         leftPanel={{
           title: models.find(m => m.id === selectedModels?.[0])?.name || selectedModels?.[0] || 'Model 1',
-          content: <div ref={leftPanelRef} className="h-full" />,
-          onCopy: () => handleCopy(leftPanelRef, 'Gemma'),
-          onFocus: () => {
-            leftStreamManager.checkScrollPosition();
-            logger.debug('Left panel focused - checking scroll position');
-          },
-          onResizeStart: () => {
-            leftStreamManager.setResizing(true);
-            logger.debug('Left panel resize started - ignoring scroll events');
-          },
-          onResizeEnd: () => {
-            leftStreamManager.setResizing(false);
-            leftStreamManager.checkScrollPosition();
-            logger.debug('Left panel resize ended - re-enabling scroll detection');
-          }
+          content: (
+            <div ref={leftPanelRef} className="h-full overflow-y-auto overflow-x-hidden scroll-smooth p-4 pb-8">
+              {((): JSX.Element[] => {
+                const entries = Array.from(streamContents.entries());
+                const filtered = entries.filter(([key]) => selectedModels && key.endsWith(`-${selectedModels[0]}`));
+                
+                logger.info('LEFT PANEL RENDER', {
+                  totalEntries: entries.length,
+                  filteredEntries: filtered.length,
+                  keys: entries.map(([k]) => k),
+                  selectedModel: selectedModels?.[0]
+                });
+                
+                return filtered.map(([key, content]): JSX.Element => (
+                  <MathAwareRenderer
+                    key={key}
+                    content={content.content}
+                    phase={content.phase}
+                    modelId={content.modelId}
+                    className="mb-4"
+                  />
+                ));
+              })()}
+            </div>
+          ),
+          onCopy: () => handleCopyContent(selectedModels?.[0] || '', 'Left Panel'),
         }}
         rightPanel={{
           title: models.find(m => m.id === selectedModels?.[1])?.name || selectedModels?.[1] || 'Model 2',
-          content: <div ref={rightPanelRef} className="h-full" />,
-          onCopy: () => handleCopy(rightPanelRef, 'Qwen'),
-          onFocus: () => {
-            rightStreamManager.checkScrollPosition();
-            logger.debug('Right panel focused - checking scroll position');
-          },
-          onResizeStart: () => {
-            rightStreamManager.setResizing(true);
-            logger.debug('Right panel resize started - ignoring scroll events');
-          },
-          onResizeEnd: () => {
-            rightStreamManager.setResizing(false);
-            rightStreamManager.checkScrollPosition();
-            logger.debug('Right panel resize ended - re-enabling scroll detection');
-          }
+          content: (
+            <div ref={rightPanelRef} className="h-full overflow-y-auto overflow-x-hidden scroll-smooth p-4 pb-8">
+              {((): JSX.Element[] => {
+                const entries = Array.from(streamContents.entries());
+                const filtered = entries.filter(([key]) => selectedModels && key.endsWith(`-${selectedModels[1]}`));
+                
+                logger.error('🟡 RIGHT PANEL RENDER', {
+                  totalEntries: entries.length,
+                  filteredEntries: filtered.length,
+                  keys: entries.map(([k]) => k),
+                  selectedModel: selectedModels?.[1],
+                  contentLengths: filtered.map(([k, c]) => ({ 
+                    key: k, 
+                    len: c.content.length,
+                    first20: c.content.substring(0, 20),
+                    last20: c.content.slice(-20)
+                  }))
+                });
+                
+                // Check if content is actually there
+                filtered.forEach(([key, content]): void => {
+                  if (!content.content) {
+                    logger.error('🔴 EMPTY CONTENT IN RENDER', { key });
+                  }
+                });
+                
+                return filtered.map(([key, content]): JSX.Element => (
+                  <MathAwareRenderer
+                    key={key}
+                    content={content.content}
+                    phase={content.phase}
+                    modelId={content.modelId}
+                    className="mb-4"
+                  />
+                ));
+              })()}
+            </div>
+          ),
+          onCopy: () => handleCopyContent(selectedModels?.[1] || '', 'Right Panel'),
         }}
       />
 
@@ -410,10 +486,10 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
       {isSynthesisActive && (
         <div className="model-panel relative">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-jarvis-accent font-tech">Synthesis</h3>
+            <h3 className="text-synergy-accent font-tech">Synthesis</h3>
             <button
               onClick={() => handleCopy(synthesisRef, 'Synthesis')}
-              className="text-jarvis-accent hover:text-jarvis-primary transition-colors p-2"
+              className="text-synergy-accent hover:text-synergy-primary transition-colors p-2"
               title="Copy to clipboard"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -423,8 +499,18 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
           </div>
           <div 
             ref={synthesisRef}
-            className="min-h-[200px] p-4 bg-jarvis-darker rounded"
-          />
+            className="min-h-[200px] p-4 bg-synergy-darker rounded overflow-y-auto"
+          >
+            {Array.from(streamContents.entries())
+              .filter(([key]) => key.includes('-synthesis'))
+              .map(([key, content]) => (
+                <SynthesisMathRenderer
+                  key={key}
+                  content={content.content}
+                  className="mb-4"
+                />
+              ))}
+          </div>
         </div>
       )}
     </div>

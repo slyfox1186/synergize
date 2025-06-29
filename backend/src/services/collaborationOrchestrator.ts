@@ -1151,6 +1151,7 @@ This is a critical correction - ensure accuracy!`;
         topK: modelConfig.settings.topK,
         minP: modelConfig.settings.minP,
         maxTokens: maxTokens,
+        customStopTriggers: formatted.stopTokens,  // Properly configure stop sequences
         onToken: (tokens: Token[]) => {
           if (this.cancelled) return;
           
