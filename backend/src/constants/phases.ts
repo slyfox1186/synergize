@@ -9,18 +9,18 @@ import { CollaborationPhase } from '../models/types.js';
  */
 export const PHASE_INSTRUCTIONS: Record<CollaborationPhase, string> = {
   [CollaborationPhase.IDLE]: 'Ready to begin.',
-  [CollaborationPhase.BRAINSTORM]: 'Generate ideas. Verify feasibility.',
-  [CollaborationPhase.CRITIQUE]: 'Find errors. Check all math/logic.',
-  [CollaborationPhase.REVISE]: 'Fix errors with proof.',
-  [CollaborationPhase.SYNTHESIZE]: 'Combine best parts. Add verification section.',
-  [CollaborationPhase.CONSENSUS]: 'FIRST: Independently verify YOUR OWN calculations. SECOND: Check partner\'s work for errors. THIRD: Maintain YOUR correct answer even if partner disagrees. Trust mathematics over agreement.',
+  [CollaborationPhase.BRAINSTORM]: 'Explore the problem thoroughly. Show all reasoning steps. For calculations, detail each operation.',
+  [CollaborationPhase.CRITIQUE]: 'Audit for correctness. Independently verify all claims, calculations, and logic. Flag any discrepancies.',
+  [CollaborationPhase.REVISE]: 'Correct identified issues with rigorous proof. Show complete work. Prioritize accuracy over speed.',
+  [CollaborationPhase.SYNTHESIZE]: 'Integrate verified insights only. Include a validation section confirming key results.',
+  [CollaborationPhase.CONSENSUS]: 'Final verification protocol: Re-solve independently, audit partner, converge on truth or prove your correct answer.',
   [CollaborationPhase.COMPLETE]: 'Complete.'
 };
 
 /**
  * Verification reminder text for system prompts
  */
-export const VERIFICATION_REMINDER = ` Verify all math. Check solvability. Catch errors.`;
+export const VERIFICATION_REMINDER = ` Incorrect answers invalidate the entire collaboration. Verify rigorously.`;
 
 
 /**

@@ -879,22 +879,26 @@ export class ConversationStateManager {
 
 
 
-  private buildSystemPrompt(phase: CollaborationPhase, _modelId: string, otherModelId: string): string {
+  private buildSystemPrompt(phase: CollaborationPhase, modelId: string, otherModelId: string): string {
     if (phase === CollaborationPhase.CONSENSUS) {
-      return `CONSENSUS PHASE - HIGH-PRIORITY VERIFICATION PROTOCOL:
+      return `SYSTEM: Final Verification Protocol
 
-You are a high-end analytical worker. Your PRIMARY directive is accuracy verification.
+OBJECTIVE: Independently verify the final answer for absolute correctness. The final output must be factually, logically, and (if applicable) mathematically sound. An incorrect answer is a critical failure.
 
-MANDATORY STEPS (in order):
-1. FIRST: Re-verify YOUR calculations independently. Show your work.
-2. SECOND: Analyze ${otherModelId}'s calculations for errors.
-3. THIRD: State YOUR final answer based on mathematical truth, not agreement.
+YOUR PROCESS:
+1. **INDEPENDENT RE-SOLVE:** Without referencing your prior answer, solve the original query from first principles. Show all critical reasoning steps.
+2. **CRITICAL AUDIT:** Scrutinize your partner's (${otherModelId}) final proposed answer and their reasoning.
+   - For math/logic: Re-calculate every step.
+   - For facts: Cross-verify against known information.
+   - For reasoning: Challenge every assumption and logical leap.
+3. **CONVERGE or CORRECT:**
+   - If both independent solutions match and are verified correct, state the final answer and the core reasoning.
+   - If there is a discrepancy, clearly state YOUR verified answer and provide a step-by-step proof explaining why it is correct and where the other model's reasoning failed.
+4. **FINAL OUTPUT FORMAT:** "My final verified answer is [Answer]. Justification: [Provide a concise but complete proof/reasoning]."
 
-CRITICAL RULE: When checking ${otherModelId}'s answer, you MUST logically verify the accuracy and correctness of their claims BEFORE continuing your analysis. If their math is wrong, say so clearly.
-
-Remember: Truth > Consensus. A correct minority is better than an incorrect majority.`;
+PRIORITY: Objective Truth > Previous Statements > Agreement.`;
     }
-    return `Collaborate with ${otherModelId}. ${PHASE_INSTRUCTIONS[phase]} Verify all claims.`;
+    return `${modelId} working with ${otherModelId}: ${PHASE_INSTRUCTIONS[phase]} Focus on correctness above all else.`;
   }
 
   private buildCurrentTurnPrompt(state: ConversationState, modelId: string): string {
@@ -902,30 +906,28 @@ Remember: Truth > Consensus. A correct minority is better than an incorrect majo
     
     if (state.currentPhase === CollaborationPhase.CONSENSUS) {
       if (turnCount === 0) {
-        return `CONSENSUS VERIFICATION TASK for: "${state.originalQuery}"
+        return `VERIFICATION TASK: "${state.originalQuery}"
 
-STEP 1: Show YOUR calculations again, step by step.
-STEP 2: Verify each step is mathematically correct.
-STEP 3: State YOUR final answer with FULL confidence.
-STEP 4: If partner disagrees, explain WHY your answer is correct.
-
-CRITICAL: Do NOT change a correct answer to match an incorrect one. Mathematics determines truth, not agreement.`;
+Execute the Final Verification Protocol:
+1. RE-SOLVE from scratch - show complete work
+2. State your verified answer clearly
+3. Be prepared to defend correctness with proof`;
       } else {
-        return `CONSENSUS FOLLOW-UP:
+        return `VERIFICATION RESPONSE:
 
-You've seen your partner's response. Now:
-1. If YOUR math was correct, MAINTAIN your answer and explain why.
-2. If you found an actual error in YOUR work, correct it and show the fix.
-3. If partner is wrong, clearly state their error and the correct approach.
+Apply critical audit to partner's answer:
+- If they're correct and you were wrong: Acknowledge and correct yourself
+- If they're wrong and you're correct: Prove it step-by-step
+- If both correct: Confirm convergence
 
-Final answer format: "My verified answer is [X] because [mathematical proof]"`;
+Final format: "My final verified answer is [X]. Justification: [proof]"`;
       }
     }
     
     if (turnCount === 0) {
-      return `Begin the ${state.currentPhase} phase. What are your initial thoughts on: "${state.originalQuery}"?`;
+      return `Begin ${state.currentPhase} phase for: "${state.originalQuery}"`;
     } else {
-      return `Continue the ${state.currentPhase} discussion. Respond to your partner's points and contribute your perspective.`;
+      return `Continue ${state.currentPhase} - respond thoughtfully to partner's points.`;
     }
   }
 
