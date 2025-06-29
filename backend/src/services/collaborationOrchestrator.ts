@@ -857,6 +857,16 @@ This is a critical correction - ensure accuracy!`;
         };
 
         try {
+          // Send immediate signal that synthesis generation is starting
+          this.sendMessage({
+            type: SSEMessageType.PHASE_UPDATE,
+            payload: {
+              phase: CollaborationPhase.SYNTHESIZE,
+              status: 'thinking',
+              message: 'Gemma is analyzing the conversation and preparing synthesis...'
+            }
+          });
+
           await this.generateWithModel(
             this.GEMMA_MODEL_ID,
             context,
@@ -1182,6 +1192,18 @@ This is a critical correction - ensure accuracy!`;
           frequencyPenalty: 0.0,
           presencePenalty: 0.0
         };
+      }
+      
+      // Send signal that model is starting to think (right before prompt execution)
+      if (phase === CollaborationPhase.SYNTHESIZE) {
+        this.sendMessage({
+          type: SSEMessageType.PHASE_UPDATE,
+          payload: {
+            phase: CollaborationPhase.SYNTHESIZE,
+            status: 'model_thinking',
+            message: 'Model is processing the synthesis request...'
+          }
+        });
       }
       
       // Generate response with formatted prompt
