@@ -15,6 +15,8 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: parseInt(env.VITE_PORT || '3000'),
+      // Suppress proxy error logging during expected startup failures
+      middlewareMode: false,
       proxy: {
         '/api': {
           target: env.VITE_API_URL || 'http://localhost:8000',
@@ -22,6 +24,8 @@ export default defineConfig(({ mode }) => {
           ws: true, // Enable WebSocket proxying for SSE
           timeout: 0, // Disable timeout for long-running SSE connections
           proxyTimeout: 0, // Disable proxy timeout
+          secure: false, // Don't verify SSL certificates
+          logLevel: 'silent', // Suppress proxy error logging
           configure: (proxy) => {
             // Configure proxy for SSE connections
             proxy.on('proxyReq', (proxyReq, req) => {
@@ -29,6 +33,18 @@ export default defineConfig(({ mode }) => {
                 // Set headers for SSE
                 proxyReq.setHeader('Cache-Control', 'no-cache');
                 proxyReq.setHeader('Connection', 'keep-alive');
+              }
+            });
+            
+            // Suppress ECONNREFUSED errors during expected startup sequence
+            proxy.on('error', (err, req, res) => {
+              if (err.code === 'ECONNREFUSED') {
+                // These are expected during server startup - suppress the error logs
+                // Just return a 503 Service Unavailable instead of logging scary errors
+                if (!res.headersSent) {
+                  res.writeHead(503, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: 'Server starting up...' }));
+                }
               }
             });
           }

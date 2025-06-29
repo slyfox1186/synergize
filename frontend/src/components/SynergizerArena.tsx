@@ -3,7 +3,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import { useCollaborationStore } from '@/store/collaborationStore';
 import { useStreamManager } from '@/hooks/useStreamManager';
 import { SSEService } from '@/services/sseService';
-import { SSEMessage, SSEMessageType, TokenChunk } from '@/types';
+import { SSEMessage, SSEMessageType, TokenChunk, CollaborationPhase } from '@/types';
 import { createLogger } from '@/utils/logger';
 import { SynchronizedResizablePanels } from './SynchronizedResizablePanels';
 
@@ -49,6 +49,43 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
   const [isSynthesisActive, setIsSynthesisActive] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const beforeUnloadHandlerRef = useRef<((e: BeforeUnloadEvent) => string) | null>(null);
+
+  // Initialize component - clear any residual content from previous sessions
+  useEffect(() => {
+    logger.info('SynergizerArena initializing - clearing all content');
+    
+    // Clear all stream managers
+    leftStreamManager.clear();
+    rightStreamManager.clear();
+    synthesisStreamManager.clear();
+    
+    // Reset all local state
+    setPromptInput('');
+    setHasScrolledToSynthesis(false);
+    setIsSynthesisActive(false);
+    
+    // Clear any pending timeouts
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = null;
+    }
+    
+    // Remove any existing beforeunload handlers
+    if (beforeUnloadHandlerRef.current) {
+      window.removeEventListener('beforeunload', beforeUnloadHandlerRef.current);
+      beforeUnloadHandlerRef.current = null;
+    }
+    
+    // Reset collaboration store to ensure clean state
+    const store = useCollaborationStore.getState();
+    store.setPrompt('');
+    store.setStreaming(false);
+    store.setPhase(CollaborationPhase.IDLE);
+    store.setStatusMessage(null);
+    store.setError(null);
+    
+    logger.info('SynergizerArena initialization complete - ready for new session');
+  }, []); // Remove stream manager dependencies to prevent infinite loop
 
   // Cleanup timeout and beforeunload handler on unmount
   useEffect(() => {
@@ -246,6 +283,7 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
         prompt: promptInput,
         models: selectedModels,
         sessionId: sessionId,
+        createdAt: new Date().toISOString(), // Add timestamp for session validation
       };
       
       logger.info('Initiating collaboration with:', requestBody);
@@ -266,6 +304,8 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
       if (data.sessionId) {
         logger.info('Connecting to SSE', { sessionId: data.sessionId });
         setSessionId(data.sessionId);
+        // Enable user-initiated connection and then connect
+        sseService.enableUserInitiatedConnection();
         sseService.connect(data.sessionId, handleSSEMessage);
       } else {
         logger.error('No sessionId in response');

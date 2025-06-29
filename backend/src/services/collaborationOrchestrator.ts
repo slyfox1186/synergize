@@ -246,7 +246,10 @@ export class CollaborationOrchestrator {
         // Phase was changed during execution, update index
         const newIndex = phases.indexOf(this.conversationState.currentPhase);
         this.logger.info(`🔍 PHASE LOOP: Phase changed during execution from ${currentPhase} to ${this.conversationState.currentPhase} (index ${newIndex})`);
-        if (newIndex > currentPhaseIndex) {
+        if (newIndex >= 0 && newIndex !== currentPhaseIndex) {
+          // Allow LLMs to jump to ANY valid phase (forward OR backward)
+          const direction = newIndex > currentPhaseIndex ? 'forward' : 'backward';
+          this.logger.info(`🎯 PHASE JUMP: LLM decided to jump ${direction} from ${currentPhase} to ${this.conversationState.currentPhase}`);
           currentPhaseIndex = newIndex;
           continue;
         }

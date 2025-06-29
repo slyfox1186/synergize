@@ -198,6 +198,42 @@ export class RedisService {
     await this.client.flushdb();
   }
 
+  /**
+   * Clear all session data during startup to prevent stale session processing
+   */
+  async clearAllSessions(): Promise<void> {
+    if (!this.client) {
+      throw new Error('Redis not connected');
+    }
+    
+    const startTime = Date.now();
+    
+    try {
+      // Find all session keys
+      const sessionKeys = await this.client.keys('session:*');
+      
+      if (sessionKeys.length > 0) {
+        // Delete all session keys
+        await this.client.del(...sessionKeys);
+        
+        this.logger.info('Session cleanup completed', {
+          clearedSessionCount: sessionKeys.length,
+          operationTimeMs: Date.now() - startTime,
+          reason: 'startup_cleanup'
+        });
+      } else {
+        this.logger.info('No sessions to clear during startup', {
+          operationTimeMs: Date.now() - startTime
+        });
+      }
+    } catch (error) {
+      this.logger.error('Failed to clear sessions during startup:', error, {
+        operationTimeMs: Date.now() - startTime
+      });
+      // Don't throw error - allow startup to continue even if cleanup fails
+    }
+  }
+
   getClient(): Redis {
     if (!this.client) {
       throw new Error('Redis not connected');

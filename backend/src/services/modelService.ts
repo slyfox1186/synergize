@@ -260,6 +260,14 @@ export class ModelService {
   }
 
   /**
+   * Check if a model is loaded and available (for health checks)
+   */
+  isModelLoaded(modelId: string): boolean {
+    const modelInstance = this.modelInstances.get(modelId);
+    return modelInstance !== undefined && modelInstance.availableContexts.length > 0;
+  }
+
+  /**
    * WAIT FOR AVAILABLE CONTEXT - Fixed to prevent resource leaks
    */
   private async waitForAvailableContext(modelId: string, timeoutMs: number = MODEL_DEFAULTS.CONTEXT_WAIT_TIMEOUT): Promise<void> {
