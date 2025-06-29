@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { TokenChunk } from '@/types';
 import { createLogger } from '@/utils/logger';
 
@@ -15,7 +15,6 @@ interface StreamContent {
 }
 
 const logger = createLogger('StreamManager');
-const UPDATE_INTERVAL = 100; // Update UI every 100ms instead of every token
 
 /**
  * React-based stream manager for managing token stream state.
@@ -32,8 +31,6 @@ export function useStreamManager({ onPhaseChange }: StreamManagerOptions): {
   // Buffer management
   const bufferMap = useRef<Map<string, string>>(new Map());
   const completedResponses = useRef<Map<string, boolean>>(new Map());
-  const pendingUpdates = useRef<Map<string, StreamContent>>(new Map());
-  const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const appendTokens = useCallback((chunk: TokenChunk) => {
     const key = `${chunk.phase}-${chunk.modelId}`;
@@ -93,30 +90,18 @@ export function useStreamManager({ onPhaseChange }: StreamManagerOptions): {
       
       bufferMap.current.set(key, newBuffer);
 
-      // Store pending update
-      pendingUpdates.current.set(key, {
-        phase: chunk.phase,
-        modelId: chunk.modelId,
-        content: newBuffer,
-        isComplete: false,
-        hasIncompleteMath: false
+      // Update React state immediately for smooth streaming
+      setStreamContents(prev => {
+        const newMap = new Map(prev);
+        newMap.set(key, {
+          phase: chunk.phase,
+          modelId: chunk.modelId,
+          content: newBuffer,
+          isComplete: false,
+          hasIncompleteMath: false
+        });
+        return newMap;
       });
-
-      // Schedule batched update
-      if (!updateTimerRef.current) {
-        updateTimerRef.current = setTimeout(() => {
-          // Apply all pending updates at once
-          setStreamContents(prev => {
-            const newMap = new Map(prev);
-            pendingUpdates.current.forEach((content, k) => {
-              newMap.set(k, content);
-            });
-            pendingUpdates.current.clear();
-            updateTimerRef.current = null;
-            return newMap;
-          });
-        }, UPDATE_INTERVAL);
-      }
 
       // Trigger phase change callback
       if (onPhaseChange && chunk.phase) {
