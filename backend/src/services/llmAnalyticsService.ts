@@ -12,13 +12,13 @@ import crypto from 'crypto';
  * LLM Analytics Service - Intelligent data operations toolkit
  * 
  * Provides reusable LLM-powered functions for:
- * - Query enhancement (HyDE)
- * - Document re-ranking
- * - Context extraction
- * - Intelligent summarization
- * - Shared context analysis
+ * - Query enhancement (HyDE) - generateHypotheticalDocument()
+ * - Document re-ranking - rerankDocuments()
+ * - Context extraction - extractSharedContext()
+ * - Intelligent summarization - createSynthesisSummary()
  * 
- * All operations are cached in Redis for performance
+ * All methods are actively used by ConversationStateManager.
+ * All operations are cached in Redis for performance.
  */
 export class LLMAnalyticsService {
   private readonly logger = createLogger('LLMAnalytics');
