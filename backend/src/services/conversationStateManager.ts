@@ -880,11 +880,22 @@ export class ConversationStateManager {
 
 
   private buildSystemPrompt(phase: CollaborationPhase, _modelId: string, otherModelId: string): string {
+    if (phase === CollaborationPhase.CONSENSUS) {
+      return `CONSENSUS PHASE with ${otherModelId}. ${PHASE_INSTRUCTIONS[phase]} Trust YOUR verified calculations. If you have the correct answer, maintain it with confidence.`;
+    }
     return `Collaborate with ${otherModelId}. ${PHASE_INSTRUCTIONS[phase]} Verify all claims.`;
   }
 
   private buildCurrentTurnPrompt(state: ConversationState, modelId: string): string {
     const turnCount = state.turns.filter(t => t.modelId === modelId).length;
+    
+    if (state.currentPhase === CollaborationPhase.CONSENSUS) {
+      if (turnCount === 0) {
+        return `CONSENSUS PHASE: Independently verify your calculations for: "${state.originalQuery}". State YOUR final answer with confidence if it's correct. Do NOT defer to incorrect answers.`;
+      } else {
+        return `CONSENSUS PHASE: Review both answers. If YOUR calculations are correct, maintain them. Only change if YOU find an error in YOUR own work. State final answer clearly.`;
+      }
+    }
     
     if (turnCount === 0) {
       return `Begin the ${state.currentPhase} phase. What are your initial thoughts on: "${state.originalQuery}"?`;

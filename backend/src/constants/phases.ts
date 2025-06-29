@@ -13,7 +13,7 @@ export const PHASE_INSTRUCTIONS: Record<CollaborationPhase, string> = {
   [CollaborationPhase.CRITIQUE]: 'Find errors. Check all math/logic.',
   [CollaborationPhase.REVISE]: 'Fix errors with proof.',
   [CollaborationPhase.SYNTHESIZE]: 'Combine best parts. Add verification section.',
-  [CollaborationPhase.CONSENSUS]: 'Final check. Confirm correctness.',
+  [CollaborationPhase.CONSENSUS]: 'INDEPENDENT verification. Stand by YOUR calculations if correct. Do NOT change correct answers.',
   [CollaborationPhase.COMPLETE]: 'Complete.'
 };
 
