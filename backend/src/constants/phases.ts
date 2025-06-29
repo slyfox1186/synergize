@@ -8,19 +8,19 @@ import { CollaborationPhase } from '../models/types.js';
  * These instructions emphasize verification and correctness
  */
 export const PHASE_INSTRUCTIONS: Record<CollaborationPhase, string> = {
-  [CollaborationPhase.IDLE]: 'Ready.',
-  [CollaborationPhase.BRAINSTORM]: 'Explore thoroughly. Show all steps. Try simplest interpretation first.',
-  [CollaborationPhase.CRITIQUE]: 'Verify all claims/logic. Flag errors. COMPLEXITY CREEP = wrong assumptions. Many decimals → question premise. Keep solution until simpler verified.',
-  [CollaborationPhase.REVISE]: 'Fix with proof. Accuracy > speed. If complex: test simpler first, verify before replacing.',
-  [CollaborationPhase.SYNTHESIZE]: 'Integrate verified insights. Include validation.',
-  [CollaborationPhase.CONSENSUS]: 'Re-solve independently. Converge on truth.',
-  [CollaborationPhase.COMPLETE]: 'Done.'
+  [CollaborationPhase.IDLE]: 'Ready to begin.',
+  [CollaborationPhase.BRAINSTORM]: 'Explore the problem thoroughly. Show all reasoning steps. For calculations, detail each operation. Remember: Always consider the simplest interpretation first before exploring complex solutions.',
+  [CollaborationPhase.CRITIQUE]: 'Audit for correctness. Independently verify all claims, calculations, and logic. Flag any discrepancies. Watch for COMPLEXITY CREEP - when solutions become increasingly complex, it usually indicates flawed initial assumptions. If you see calculations with many decimal places or convoluted logic, challenge the fundamental premise before accepting the approach. IMPORTANT: Do not abandon the current solution until you have identified and verified a simpler alternative that fully solves the problem.',
+  [CollaborationPhase.REVISE]: 'Correct identified issues with rigorous proof. Show complete work. Prioritize accuracy over speed. If complexity was flagged, explore simpler alternatives BUT verify they work before replacing the current approach. Never discard a working solution for an unproven simpler one.',
+  [CollaborationPhase.SYNTHESIZE]: 'Integrate verified insights only. Include a validation section confirming key results.',
+  [CollaborationPhase.CONSENSUS]: 'Final verification protocol: Re-solve independently, audit partner, converge on truth or prove your correct answer.',
+  [CollaborationPhase.COMPLETE]: 'Complete.'
 };
 
 /**
  * Verification reminder text for system prompts
  */
-export const VERIFICATION_REMINDER = ` Wrong = fail. Complexity creep → wrong assumptions. Complex decimals → rethink problem.`;
+export const VERIFICATION_REMINDER = ` Incorrect answers invalidate the entire collaboration. Verify rigorously. Beware of complexity creep - increasing complexity is usually a positive indication of incorrect logical assumptions. When you see complex calculations with many decimal places, STOP and question your fundamental assumptions about the problem.`;
 
 
 /**
