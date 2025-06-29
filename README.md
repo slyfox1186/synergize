@@ -15,6 +15,8 @@ A multi-model AI collaboration system where Large Language Models work together 
 ![Screenshot 02](https://i.imgur.com/7kAYjt5.png)
 #### PHASE: `REVISE`
 ![Screenshot 03](https://i.imgur.com/IbdPAu8.png)
+#### PHASE: `CONSENSUS`
+![Screenshot 04](https://i.imgur.com/QfvhOpE.png)
 
 ## 🌟 Key Features
 
