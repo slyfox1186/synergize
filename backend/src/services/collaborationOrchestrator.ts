@@ -908,6 +908,26 @@ This is a critical correction - ensure accuracy!`;
       } as AgreementAnalysis
     );
 
+    // Send initial synthesis update to trigger the panel
+    this.sendMessage({
+      type: SSEMessageType.SYNTHESIS_UPDATE,
+      payload: {
+        modelId: 'synthesis',
+        phase: CollaborationPhase.SYNTHESIZE,
+        tokens: [''],  // Empty token to trigger panel activation
+        isComplete: false
+      } as TokenChunk
+    });
+
+    // Stream the minimal synthesis token by token
+    const tokens = minimalSynthesis.split(' ');
+    for (const token of tokens) {
+      this.streamingService.addToken('synthesis', CollaborationPhase.SYNTHESIZE, token + ' ');
+      // Small delay to simulate streaming
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    this.streamingService.completeStream('synthesis', CollaborationPhase.SYNTHESIZE);
+
     // Store the minimal synthesis
     await this.conversationManager.addTurn(
       this.conversationState.sessionId,
@@ -918,15 +938,15 @@ This is a critical correction - ensure accuracy!`;
     );
 
     this.sendMessage({
-      type: SSEMessageType.SYNTHESIS_UPDATE,
-      payload: {
-        finalSynthesis: minimalSynthesis,
-        analysis: null,
-        phase: CollaborationPhase.CONSENSUS
+      type: SSEMessageType.PHASE_UPDATE,
+      payload: { 
+        phase: CollaborationPhase.CONSENSUS, 
+        status: 'synthesis_complete',
+        synthesisAnalysis: null
       }
     });
 
-    this.logger.info('✅ Minimal synthesis generated and sent');
+    this.logger.info('✅ Minimal synthesis generated and streamed');
   }
 
   /**
@@ -940,12 +960,32 @@ This is a critical correction - ensure accuracy!`;
       `Collaboration completed with ${this.conversationState.turns.length} total exchanges. Latest response: ${lastTurn.content.substring(0, 200)}...` :
       `Collaboration completed with ${this.conversationState.turns.length} total exchanges.`;
 
+    // Send initial synthesis update to trigger the panel
     this.sendMessage({
       type: SSEMessageType.SYNTHESIS_UPDATE,
       payload: {
-        finalSynthesis: summary,
-        analysis: null,
-        phase: CollaborationPhase.CONSENSUS
+        modelId: 'synthesis',
+        phase: CollaborationPhase.SYNTHESIZE,
+        tokens: [''],  // Empty token to trigger panel activation
+        isComplete: false
+      } as TokenChunk
+    });
+
+    // Stream the summary token by token
+    const tokens = summary.split(' ');
+    for (const token of tokens) {
+      this.streamingService.addToken('synthesis', CollaborationPhase.SYNTHESIZE, token + ' ');
+      // Small delay to simulate streaming
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    this.streamingService.completeStream('synthesis', CollaborationPhase.SYNTHESIZE);
+
+    this.sendMessage({
+      type: SSEMessageType.PHASE_UPDATE,
+      payload: { 
+        phase: CollaborationPhase.CONSENSUS, 
+        status: 'synthesis_complete',
+        synthesisAnalysis: null
       }
     });
   }

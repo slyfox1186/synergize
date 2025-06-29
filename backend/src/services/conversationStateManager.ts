@@ -881,7 +881,18 @@ export class ConversationStateManager {
 
   private buildSystemPrompt(phase: CollaborationPhase, _modelId: string, otherModelId: string): string {
     if (phase === CollaborationPhase.CONSENSUS) {
-      return `CONSENSUS PHASE with ${otherModelId}. ${PHASE_INSTRUCTIONS[phase]} Trust YOUR verified calculations. If you have the correct answer, maintain it with confidence.`;
+      return `CONSENSUS PHASE - HIGH-PRIORITY VERIFICATION PROTOCOL:
+
+You are a high-end analytical worker. Your PRIMARY directive is accuracy verification.
+
+MANDATORY STEPS (in order):
+1. FIRST: Re-verify YOUR calculations independently. Show your work.
+2. SECOND: Analyze ${otherModelId}'s calculations for errors.
+3. THIRD: State YOUR final answer based on mathematical truth, not agreement.
+
+CRITICAL RULE: When checking ${otherModelId}'s answer, you MUST logically verify the accuracy and correctness of their claims BEFORE continuing your analysis. If their math is wrong, say so clearly.
+
+Remember: Truth > Consensus. A correct minority is better than an incorrect majority.`;
     }
     return `Collaborate with ${otherModelId}. ${PHASE_INSTRUCTIONS[phase]} Verify all claims.`;
   }
@@ -891,9 +902,23 @@ export class ConversationStateManager {
     
     if (state.currentPhase === CollaborationPhase.CONSENSUS) {
       if (turnCount === 0) {
-        return `CONSENSUS PHASE: Independently verify your calculations for: "${state.originalQuery}". State YOUR final answer with confidence if it's correct. Do NOT defer to incorrect answers.`;
+        return `CONSENSUS VERIFICATION TASK for: "${state.originalQuery}"
+
+STEP 1: Show YOUR calculations again, step by step.
+STEP 2: Verify each step is mathematically correct.
+STEP 3: State YOUR final answer with FULL confidence.
+STEP 4: If partner disagrees, explain WHY your answer is correct.
+
+CRITICAL: Do NOT change a correct answer to match an incorrect one. Mathematics determines truth, not agreement.`;
       } else {
-        return `CONSENSUS PHASE: Review both answers. If YOUR calculations are correct, maintain them. Only change if YOU find an error in YOUR own work. State final answer clearly.`;
+        return `CONSENSUS FOLLOW-UP:
+
+You've seen your partner's response. Now:
+1. If YOUR math was correct, MAINTAIN your answer and explain why.
+2. If you found an actual error in YOUR work, correct it and show the fix.
+3. If partner is wrong, clearly state their error and the correct approach.
+
+Final answer format: "My verified answer is [X] because [mathematical proof]"`;
       }
     }
     
