@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import markdownit from 'markdown-it';
 
 import { TokenChunk } from '@/types';
+import { createLogger } from '@/utils/logger';
 
 interface StreamManagerOptions {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -15,6 +16,8 @@ const md = markdownit({
   typographer: true,     // Enable smart quotes
   breaks: true,          // Convert \n to <br>
 });
+
+const logger = createLogger('StreamManager');
 
 export class StreamManager {
   private readonly containerRef: React.RefObject<HTMLDivElement | null>;
@@ -73,13 +76,13 @@ export class StreamManager {
         if (isAtBottom) {
           if (!this.scrollingEnabled) {
             this.scrollingEnabled = true;
-            console.log('[StreamManager] Auto-scroll re-enabled - user scrolled to bottom');
+            logger.debug('Auto-scroll re-enabled - user scrolled to bottom');
           }
         }
         // Disable autoscroll if user scrolls up away from bottom
         else if (!isAtBottom && this.scrollingEnabled && !isScrollingDown) {
           this.scrollingEnabled = false;
-          console.log('[StreamManager] Auto-scroll disabled - user scrolled up');
+          logger.debug('Auto-scroll disabled - user scrolled up');
         }
         
         lastScrollTop = scrollTop;

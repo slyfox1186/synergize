@@ -552,13 +552,15 @@ export class CollaborationOrchestrator {
     if (gemmaAnswer?.value) solutionSummary += `Gemma's Answer: ${gemmaAnswer.value}\n`;
     if (qwenAnswer?.value) solutionSummary += `Qwen's Answer: ${qwenAnswer.value}\n`;
     
-    return `FINAL VERIFICATION: Perform thorough error checking on the solutions.
+    return `FINAL RED TEAM VERIFICATION: Your mission is to find any flaw.
+Assume the provided solutions are incorrect until proven otherwise.
 
 ${solutionSummary}
-Check for mathematical errors, logical flaws, or incorrect reasoning.
 
-If you find ANY errors, start your response with "ERROR DETECTED:"
-If everything is correct, start with "VERIFICATION PASSED:"`;
+1. Deconstruct the reasoning step-by-step.
+2. Independently verify every calculation and logical assertion.
+3. If you find ANY error, however small, start your response with "ERROR DETECTED:" and provide a detailed correction.
+4. If the solution withstands your rigorous audit, start with "VERIFICATION PASSED:"`;
   }
   
   /**
@@ -803,6 +805,9 @@ This is a critical correction - ensure accuracy!`;
             undefined,  // No additional context needed - it's in the prompt
             allocation  // Pass the pre-calculated allocation
           );
+          
+          // Ensure synthesis completion is streamed
+          this.streamingService.completeStream('synthesis', CollaborationPhase.SYNTHESIZE);
         } finally {
           // Always restore original streaming, even if generation fails
           this.streamingService.addToken = originalAddToken;
