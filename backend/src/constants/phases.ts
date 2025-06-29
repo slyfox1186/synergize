@@ -10,7 +10,7 @@ import { CollaborationPhase } from '../models/types.js';
 export const PHASE_INSTRUCTIONS: Record<CollaborationPhase, string> = {
   [CollaborationPhase.IDLE]: 'Ready to begin.',
   [CollaborationPhase.BRAINSTORM]: 'Explore the problem thoroughly. Show all reasoning steps. For calculations, detail each operation.',
-  [CollaborationPhase.CRITIQUE]: 'Audit for correctness. Independently verify all claims, calculations, and logic. Flag any discrepancies.',
+  [CollaborationPhase.CRITIQUE]: 'Audit for correctness. Independently verify all claims, calculations, and logic. Flag any discrepancies. IMPORTANT: Do not overengineer or overthink problems - always consider if a simpler explanation exists. Challenge unnecessary complexity.',
   [CollaborationPhase.REVISE]: 'Correct identified issues with rigorous proof. Show complete work. Prioritize accuracy over speed.',
   [CollaborationPhase.SYNTHESIZE]: 'Integrate verified insights only. Include a validation section confirming key results.',
   [CollaborationPhase.CONSENSUS]: 'Final verification protocol: Re-solve independently, audit partner, converge on truth or prove your correct answer.',
@@ -20,7 +20,7 @@ export const PHASE_INSTRUCTIONS: Record<CollaborationPhase, string> = {
 /**
  * Verification reminder text for system prompts
  */
-export const VERIFICATION_REMINDER = ` Incorrect answers invalidate the entire collaboration. Verify rigorously.`;
+export const VERIFICATION_REMINDER = ` Incorrect answers invalidate the entire collaboration. Verify rigorously. When critiquing, always ask: "Is there a simpler explanation?" Avoid overengineering solutions.`;
 
 
 /**
