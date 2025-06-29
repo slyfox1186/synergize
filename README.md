@@ -82,17 +82,19 @@ npm run dev
 
 Download these GGUF models and place them in the `models/` directory:
 
-1. **Gemma 3 12B** (Primary model)
+1. **Gemma 3 12B IT Q4_0** (Primary model)
    - Filename: `gemma-3-12b-it-q4-0.gguf`
+   - Quantization: 4-bit (Q4_0)
    - Role: Participant and curator
    
-2. **Qwen 3 14B** (Secondary model)
+2. **Qwen 3 14B UD Q4_K_XL** (Secondary model)  
    - Filename: `qwen3-14b-ud-q4-k-xl.gguf`
+   - Quantization: 4-bit K-quant extra large (Q4_K_XL)
    - Role: Verification and critique
 
-Download the models from:
-- **Qwen 3 14B**: https://huggingface.co/unsloth/Qwen3-14B-GGUF
-- **Gemma 3 12B**: https://huggingface.co/google/gemma-3-12b-it-qat-q4_0-gguf
+Download the specific quantized models from:
+- **Qwen 3 14B UD Q4_K_XL**: https://huggingface.co/unsloth/Qwen3-14B-GGUF
+- **Gemma 3 12B IT Q4_0**: https://huggingface.co/google/gemma-3-12b-it-qat-q4_0-gguf
 
 ## 📖 Usage
 
