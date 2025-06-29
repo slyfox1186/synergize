@@ -6,11 +6,13 @@ import { ConversationStateManager } from './conversationStateManager.js';
 import { ConversationCurator } from './conversationCurator.js';
 import { ContextAllocator, TokenAllocation } from './contextAllocator.js';
 import { TokenCounter } from './tokenCounter.js';
+import { FinalAnswerService } from './finalAnswerService.js';
+import { DevilsAdvocateService } from './devilsAdvocateService.js';
+import { QwenThinkingService } from './qwenThinkingService.js';
 import { 
   CollaborationPhase, 
   SSEMessage, 
-  SSEMessageType,
-  TokenChunk
+  SSEMessageType
 } from '../models/types.js';
 import { ConversationState, ConversationTurn } from '../models/conversationTypes.js';
 import { ModelRole, AgreementAnalysis, ConsensusLevel } from '../models/curatedConversationTypes.js';
@@ -42,6 +44,9 @@ export class CollaborationOrchestrator {
   private curator: ConversationCurator;
   private contextAllocator: ContextAllocator;
   private tokenCounter: TokenCounter;
+  private finalAnswerService: FinalAnswerService;
+  private devilsAdvocateService: DevilsAdvocateService;
+  private qwenThinkingService: QwenThinkingService;
   private logger = createLogger('CollaborationOrchestrator');
   private verificationAttempts = 0;
   private readonly MAX_VERIFICATION_ATTEMPTS = 2;
@@ -61,16 +66,26 @@ export class CollaborationOrchestrator {
     this.tokenCounter = new TokenCounter();
     this.contextAllocator = new ContextAllocator(this.tokenCounter);
     
-    this.logger.info('🧮 CollaborationOrchestrator initialized with professional token management:');
-    this.logger.info('   ✅ TokenCounter with tiktoken precision');
-    this.logger.info('   ✅ ContextAllocator with Gemini\'s algorithm');
-    this.logger.info('   ✅ Dynamic phase-based allocation');
-    
     // Initialize state-of-the-art conversation management with intelligent compression
     // Compression now happens asynchronously at phase transitions
     const enableCompression = process.env.ENABLE_CONVERSATION_COMPRESSION !== 'false'; // Enabled by default
     this.conversationManager = new ConversationStateManager(this.redisService, this.modelService, enableCompression);
     this.curator = new ConversationCurator(this.conversationManager, this.modelService);
+    
+    // Initialize final answer service
+    this.finalAnswerService = new FinalAnswerService(modelService, this.streamingService, sendMessage);
+    
+    // Initialize devil's advocate service
+    this.devilsAdvocateService = new DevilsAdvocateService(modelService, this.conversationManager, this.streamingService, sendMessage);
+    
+    // Initialize Qwen thinking service with optimal settings
+    this.qwenThinkingService = new QwenThinkingService(modelService, this.streamingService, sendMessage);
+    
+    this.logger.info('🧮 CollaborationOrchestrator initialized with professional token management:');
+    this.logger.info('   ✅ TokenCounter with tiktoken precision');
+    this.logger.info('   ✅ ContextAllocator with Gemini\'s algorithm');
+    this.logger.info('   ✅ Dynamic phase-based allocation');
+    this.logger.info('   ✅ QwenThinkingService with optimal thinking mode settings');
   }
 
   /**
@@ -340,22 +355,48 @@ export class CollaborationOrchestrator {
         return;
       }
 
-      // Ask Gemma to make intelligent phase decision
-      this.logger.info(`🤔 Asking Gemma to make phase decision for ${phase}`);
-      const phaseDecision = await this.curator.makePhaseDecision(
-        this.conversationState.sessionId,
-        phase,
-        qwenResponseTurn.content,
-        this.GEMMA_MODEL_ID
-      );
+      // Use dedicated DevilsAdvocateService for critical analysis and phase decisions
+      this.logger.info(`👹 Performing devil's advocate analysis for ${phase}`);
+      const criticalAnalysis = await this.devilsAdvocateService.performCriticalAnalysis({
+        sessionId: this.conversationState.sessionId,
+        currentPhase: phase,
+        responseToAnalyze: qwenResponseTurn.content,
+        analyzerModelId: this.GEMMA_MODEL_ID
+      });
 
-      this.logger.info(`🧠 Gemma's decision: ${phaseDecision.reasoning}`);
-      this.logger.info(`🔍 PHASE DEBUG: shouldTransition=${phaseDecision.shouldTransition}, targetPhase=${phaseDecision.targetPhase}`);
+      const phaseDecision = criticalAnalysis.phaseDecision;
+      
+      this.logger.info(`🧠 Devil's advocate decision: ${phaseDecision.reasoning}`);
+      this.logger.info(`🔍 ANALYSIS RESULT: hasErrors=${criticalAnalysis.hasErrors}, severity=${criticalAnalysis.severity}, shouldTransition=${phaseDecision.shouldTransition}`);
 
-      if (phaseDecision.shouldTransition && phaseDecision.targetPhase) {
-        this.logger.info(`🔄 Executing intelligent transition from ${phase} to ${phaseDecision.targetPhase}`);
+      // Handle critical errors by forcing CRITIQUE phase
+      if (criticalAnalysis.hasErrors && criticalAnalysis.severity === 'CRITICAL') {
+        this.logger.warn(`⚠️ Critical errors detected - forcing CRITIQUE phase`);
+        await this.devilsAdvocateService.forceCritiquePhase(
+          this.conversationState.sessionId,
+          phase,
+          phaseDecision.criticalIssuesFound
+        );
         
-        // Intelligent transition based on Gemma's analysis
+        await this.conversationManager.manualPhaseTransition(
+          this.conversationState.sessionId, 
+          CollaborationPhase.CRITIQUE
+        );
+        this.conversationState = await this.conversationManager.getConversationState(this.conversationState.sessionId);
+        return; // Exit early due to forced critique
+      }
+
+      // Handle normal phase transitions
+      if (phaseDecision.shouldTransition && phaseDecision.targetPhase) {
+        this.logger.info(`🔄 Executing devil's advocate transition from ${phase} to ${phaseDecision.targetPhase}`);
+        
+        await this.devilsAdvocateService.notifyPhaseTransition(
+          this.conversationState.sessionId,
+          phase,
+          phaseDecision.targetPhase,
+          phaseDecision.reasoning
+        );
+        
         await this.conversationManager.manualPhaseTransition(
           this.conversationState.sessionId, 
           phaseDecision.targetPhase
@@ -363,18 +404,9 @@ export class CollaborationOrchestrator {
         this.conversationState = await this.conversationManager.getConversationState(this.conversationState.sessionId);
         
         this.logger.info(`✅ Phase transition complete. New phase: ${this.conversationState?.currentPhase}`);
-        
-        this.sendMessage({
-          type: SSEMessageType.PHASE_UPDATE,
-          payload: { 
-            phase: this.conversationState?.currentPhase || phase, 
-            status: 'intelligent_transition',
-            reasoning: phaseDecision.reasoning
-          }
-        });
         return; // Exit early due to intelligent phase transition
       } else {
-        this.logger.info(`➡️ Continuing with current phase ${phase} (no transition)`);
+        this.logger.info(`➡️ Continuing with current phase ${phase} (no transition - ${phaseDecision.reasoning})`);
       }
     }
 
@@ -494,12 +526,12 @@ export class CollaborationOrchestrator {
 
   /**
    * PERFORM QWEN FINAL VERIFICATION BEFORE SYNTHESIS
-   * This step uses Qwen3's thinking mode to catch logic errors
+   * Uses QwenThinkingService with optimal settings for thinking mode
    */
   private async performQwenFinalVerification(): Promise<{ hasErrors: boolean; errorDetails?: string }> {
     if (!this.conversationState) return { hasErrors: false };
     
-    this.logger.info('🔍 Running Qwen3 final verification with thinking mode enabled');
+    this.logger.info('🔍 Running Qwen3 final verification with optimized thinking mode settings');
     
     // Send status update to inform user about verification
     this.sendMessage({
@@ -507,79 +539,86 @@ export class CollaborationOrchestrator {
       payload: { 
         phase: CollaborationPhase.CONSENSUS, 
         status: 'verification_started',
-        message: '🔍 Running final verification with Qwen3 (thinking mode enabled)...\nThis may take a moment as the model thoroughly checks for errors.'
+        message: '🔍 Running final verification with Qwen3 (thinking mode enabled with optimal settings)...\nSettings: Temperature 0.6, TopP 0.95, TopK 20\nThis may take a moment as the model thoroughly checks for errors.'
       }
     });
     
     try {
-      // Use the sophisticated token allocation system instead of manual prompt building
+      // Get conversation context for verification
       const conversationPrompt = await this.conversationManager.buildConversationPrompt(
         this.conversationState.sessionId,
         this.QWEN_MODEL_ID,
-        await this.buildQwenVerificationPrompt() // Pass our verification prompt as the new prompt
+        ''
+      );
+      const conversationContext = conversationPrompt.conversationContext;
+      
+      // Get the latest synthesis content
+      const synthesisContent = await this.getSynthesisContent();
+      
+      // Use QwenThinkingService for verification with optimal settings
+      const verificationResult = await this.qwenThinkingService.performFinalVerification(
+        this.conversationState.sessionId,
+        synthesisContent,
+        conversationContext
       );
       
-      this.logger.info(`🎯 Using sophisticated token allocation for verification:`);
-      this.logger.info(`   Generation tokens: ${conversationPrompt.metadata.tokenAllocation.maxGenerationTokens}`);
-      this.logger.info(`   History tokens: ${conversationPrompt.metadata.tokenAllocation.actualHistoryTokens}`);
-      this.logger.info(`   Total allocated: ${conversationPrompt.metadata.tokenAllocation.totalAllocated}`);
-
-      // Acquire context for Qwen
-      const context = await this.modelService.acquireContext(this.QWEN_MODEL_ID);
-      try {
-        // Generate Qwen's verification using the properly allocated prompt
-        const response = await this.generateWithModel(
-          this.QWEN_MODEL_ID,
-          context,
-          conversationPrompt.currentTurn,
-          CollaborationPhase.CONSENSUS,
-          conversationPrompt.conversationContext,  // Use the properly allocated conversation context
-          conversationPrompt.metadata.tokenAllocation,  // Use the calculated allocation
-          true // skipNoThink flag to enable thinking mode
-        );
-        
-        // Store the verification turn with isVerification flag
-        await this.conversationManager.addTurn(
-          this.conversationState.sessionId,
-          this.QWEN_MODEL_ID,
-          response,
-          Date.now(),
-          undefined,
-          true // Mark as verification turn
-        );
-        
-        // Parse the verification response to check for errors
-        const verificationResult = this.parseVerificationResponse(response);
-        
-        if (verificationResult.hasErrors) {
-          this.logger.warn(`⚠️ Qwen3 detected errors: ${verificationResult.errorDetails}`);
-          // Send status update about errors found
-          this.sendMessage({
-            type: SSEMessageType.PHASE_UPDATE,
-            payload: { 
-              phase: CollaborationPhase.CONSENSUS, 
-              status: 'verification_errors_found',
-              message: `⚠️ Verification found errors that need correction:\n${verificationResult.errorDetails}`
-            }
-          });
-        } else {
-          this.logger.info('✅ Qwen3 verification passed - no errors found');
-          // Send status update about successful verification
-          this.sendMessage({
-            type: SSEMessageType.PHASE_UPDATE,
-            payload: { 
-              phase: CollaborationPhase.CONSENSUS, 
-              status: 'verification_passed',
-              message: '✅ Verification complete - no errors found. Proceeding with final synthesis...'
-            }
-          });
-        }
-        
-        return verificationResult;
-        
-      } finally {
-        this.modelService.releaseContext(this.QWEN_MODEL_ID, context);
+      this.logger.info('🧠 Qwen thinking mode completed', {
+        success: verificationResult.success,
+        hadThinkingContent: verificationResult.hadThinkingContent,
+        thinkingTokens: verificationResult.thinkingTokens,
+        outputTokens: verificationResult.outputTokens,
+        tokensPerSecond: verificationResult.tokenMetrics.tokensPerSecond
+      });
+      
+      if (!verificationResult.success) {
+        throw new Error('Verification execution failed');
       }
+      
+      // Store the verification turn with isVerification flag
+      await this.conversationManager.addTurn(
+        this.conversationState.sessionId,
+        this.QWEN_MODEL_ID,
+        verificationResult.content,
+        verificationResult.tokenMetrics.generationTimeMs,
+        undefined,
+        true // Mark as verification turn
+      );
+      
+      // Check if verification found errors
+      const hasErrors = this.qwenThinkingService.isVerificationFailure(verificationResult.content);
+      const errorDetails = hasErrors 
+        ? this.qwenThinkingService.extractErrorDetails(verificationResult.content)
+        : undefined;
+      
+      if (hasErrors) {
+        this.logger.warn('⚠️ Qwen3 detected errors', { errorDetails });
+        // Send status update about errors found
+        this.sendMessage({
+          type: SSEMessageType.PHASE_UPDATE,
+          payload: { 
+            phase: CollaborationPhase.CONSENSUS, 
+            status: 'verification_errors_found',
+            message: `⚠️ Verification found errors that need correction:\n${errorDetails?.errors.map(e => `${e.severity}: ${e.description}`).join('\n')}`
+          }
+        });
+      } else {
+        this.logger.info('✅ Qwen3 verification passed - no errors found');
+        // Send status update about successful verification
+        this.sendMessage({
+          type: SSEMessageType.PHASE_UPDATE,
+          payload: { 
+            phase: CollaborationPhase.CONSENSUS, 
+            status: 'verification_passed',
+            message: '✅ Verification complete - no errors found. Proceeding with final synthesis...'
+          }
+        });
+      }
+      
+      return { 
+        hasErrors, 
+        errorDetails: errorDetails?.errors.map(e => `${e.severity}: ${e.description}`).join('\n')
+      };
+      
     } catch (error) {
       this.logger.error('Qwen verification failed:', error);
       // Send status update about verification failure
@@ -597,85 +636,36 @@ export class CollaborationOrchestrator {
   }
   
   /**
-   * BUILD QWEN VERIFICATION PROMPT
-   * Now uses sophisticated token allocation system - can be more detailed
+   * GET SYNTHESIS CONTENT
+   * Helper method to retrieve the latest synthesis content for verification
    */
-  private async buildQwenVerificationPrompt(): Promise<string> {
+  private async getSynthesisContent(): Promise<string> {
     if (!this.conversationState) return '';
     
-    // Get structured solutions from both models - system will handle token limits
+    // Get the conversation state which includes all turns
+    const state = await this.conversationManager.getConversationState(this.conversationState.sessionId);
+    if (!state) return '';
+    
+    // Find the most recent synthesis/consensus phase content
+    for (let i = state.turns.length - 1; i >= 0; i--) {
+      const turn = state.turns[i];
+      if (turn.phase === CollaborationPhase.SYNTHESIZE || 
+          turn.phase === CollaborationPhase.CONSENSUS) {
+        return turn.content;
+      }
+    }
+    
+    // If no synthesis found, get structured solutions as fallback
     const solutions = await this.conversationManager.getStructuredSolutions(this.conversationState.sessionId);
-    const gemmaAnswer = solutions.get(this.GEMMA_MODEL_ID);
-    const qwenAnswer = solutions.get(this.QWEN_MODEL_ID);
+    const solutionTexts: string[] = [];
     
-    let solutionSummary = '';
-    if (gemmaAnswer?.value) solutionSummary += `Gemma's Answer: ${gemmaAnswer.value}\n`;
-    if (qwenAnswer?.value) solutionSummary += `Qwen's Answer: ${qwenAnswer.value}\n`;
+    solutions.forEach((solution, modelId) => {
+      if (solution.value) {
+        solutionTexts.push(`${modelId}: ${solution.value}`);
+      }
+    });
     
-    return `FINAL RED TEAM VERIFICATION: Your mission is to find any flaw.
-Assume the provided solutions are incorrect until proven otherwise.
-
-${solutionSummary}
-
-1. Deconstruct the reasoning step-by-step.
-2. Independently verify every calculation and logical assertion.
-3. If you find ANY error, however small, start your response with "ERROR DETECTED:" and provide a detailed correction.
-4. If the solution withstands your rigorous audit, start with "VERIFICATION PASSED:"`;
-  }
-  
-  /**
-   * PARSE VERIFICATION RESPONSE
-   */
-  private parseVerificationResponse(response: string): { hasErrors: boolean; errorDetails?: string } {
-    const lowerResponse = response.toLowerCase();
-    
-    // FIRST: Check for explicit verification passed - this takes precedence
-    if (response.includes('VERIFICATION PASSED:') || 
-        response.includes('No errors detected') ||
-        response.includes('no errors were detected')) {
-      return { hasErrors: false };
-    }
-    
-    // SECOND: Check for explicit error indicators
-    if (response.includes('ERROR DETECTED:') || 
-        lowerResponse.includes('error found') ||
-        lowerResponse.includes('incorrect') ||
-        lowerResponse.includes('wrong answer') ||
-        lowerResponse.includes('mathematical error') ||
-        lowerResponse.includes('logic error') ||
-        lowerResponse.includes('flaw in reasoning')) {
-      
-      // Extract error details
-      const errorMatch = response.match(/ERROR DETECTED:(.*?)(?:VERIFICATION|$)/s);
-      const errorDetails = errorMatch ? errorMatch[1].trim() : response.substring(0, 500);
-      
-      return { hasErrors: true, errorDetails };
-    }
-    
-    // THIRD: Check for positive indicators (without negative context)
-    if ((lowerResponse.includes('correct') && !lowerResponse.includes('incorrect')) ||
-        lowerResponse.includes('verified') ||
-        lowerResponse.includes('conclusive')) {
-      return { hasErrors: false };
-    }
-    
-    // FOURTH: Look for negative indicators only if no positive verification found
-    const negativeIndicators = [
-      'mistake', 'flaw', 'issue', 'problem', 'fail', 
-      'does not', 'doesn\'t', 'should be'
-      // Removed 'actually' as it can appear in positive contexts
-    ];
-    
-    const hasNegativeIndicators = negativeIndicators.some(indicator => 
-      lowerResponse.includes(indicator)
-    );
-    
-    if (hasNegativeIndicators) {
-      return { hasErrors: true, errorDetails: response.substring(0, 500) };
-    }
-    
-    // Default to no errors if unclear
-    return { hasErrors: false };
+    return solutionTexts.join('\n\n');
   }
 
   /**
@@ -815,64 +805,21 @@ This is a critical correction - ensure accuracy!`;
 
       this.logger.info(`🎯 Synthesis prompt: ${promptTokens} tokens, generation space: ${allocation.maxGenerationTokens} tokens`);
 
-      // Execute Gemma with the synthesis prompt - BUT let Gemma decide if this should be final
-      const context = await this.modelService.acquireContext(this.GEMMA_MODEL_ID);
-      try {
+      // Use the dedicated FinalAnswerService for reliable synthesis generation
+      const synthesisResult = await this.finalAnswerService.generateFinalAnswer({
+        sessionId: this.conversationState.sessionId,
+        modelId: this.GEMMA_MODEL_ID,
+        prompt: synthesisInstruction,
+        phase: CollaborationPhase.SYNTHESIZE,
+        tokenAllocation: allocation,
+        routeToSynthesis: true
+      });
 
-        // For final synthesis, we want to stream to the synthesis panel
-        // Store the original method
-        const originalAddToken = this.streamingService.addToken.bind(this.streamingService);
-        
-        // Send initial synthesis update to trigger the panel
-        this.sendMessage({
-          type: SSEMessageType.SYNTHESIS_UPDATE,
-          payload: {
-            modelId: 'synthesis',
-            phase: CollaborationPhase.SYNTHESIZE,
-            tokens: [''],  // Empty token to trigger panel activation
-            isComplete: false
-          } as TokenChunk
+      if (synthesisResult.success) {
+        this.logger.info('✅ Synthesis generated successfully', {
+          contentLength: synthesisResult.content.length,
+          tokenMetrics: synthesisResult.tokenMetrics
         });
-        
-        // Override streaming to route to synthesis panel
-        const originalCompleteStream = this.streamingService.completeStream.bind(this.streamingService);
-        
-        this.streamingService.addToken = (modelId: string, phase: CollaborationPhase, token: string): void => {
-          // Only route to synthesis panel if we're in SYNTHESIS phase
-          if (phase === CollaborationPhase.SYNTHESIZE) {
-            originalAddToken('synthesis', phase, token);
-          } else {
-            // For any other phase, use the original modelId
-            originalAddToken(modelId, phase, token);
-          }
-        };
-        
-        this.streamingService.completeStream = (modelId: string, phase: CollaborationPhase): void => {
-          // Only route to synthesis panel if we're in SYNTHESIS phase
-          if (phase === CollaborationPhase.SYNTHESIZE) {
-            originalCompleteStream('synthesis', phase);
-          } else {
-            originalCompleteStream(modelId, phase);
-          }
-        };
-
-        try {
-          await this.generateWithModel(
-            this.GEMMA_MODEL_ID,
-            context,
-            synthesisInstruction,  // The synthesis task/prompt contains everything needed
-            CollaborationPhase.SYNTHESIZE,  // Use SYNTHESIZE phase for optimal token allocation
-            undefined,  // No additional context needed - it's in the prompt
-            allocation  // Pass the pre-calculated allocation
-          );
-          
-          // Ensure synthesis completion is streamed
-          this.streamingService.completeStream('synthesis', CollaborationPhase.SYNTHESIZE);
-        } finally {
-          // Always restore original streaming, even if generation fails
-          this.streamingService.addToken = originalAddToken;
-          this.streamingService.completeStream = originalCompleteStream;
-        }
         
         // Send the complete synthesis update for the panel header
         this.sendMessage({
@@ -883,9 +830,17 @@ This is a critical correction - ensure accuracy!`;
             synthesisAnalysis: analysis
           }
         });
-
-      } finally {
-        this.modelService.releaseContext(this.GEMMA_MODEL_ID, context);
+      } else {
+        this.logger.error('❌ Synthesis generation failed, attempting fallback');
+        
+        // Attempt fallback generation
+        await this.finalAnswerService.generateFallbackAnswer({
+          sessionId: this.conversationState.sessionId,
+          modelId: this.GEMMA_MODEL_ID,
+          prompt: synthesisInstruction,
+          phase: CollaborationPhase.SYNTHESIZE,
+          routeToSynthesis: true
+        });
       }
       
     } catch (error) {
@@ -973,25 +928,14 @@ This is a critical correction - ensure accuracy!`;
       } as AgreementAnalysis
     );
 
-    // Send initial synthesis update to trigger the panel
-    this.sendMessage({
-      type: SSEMessageType.SYNTHESIS_UPDATE,
-      payload: {
-        modelId: 'synthesis',
-        phase: CollaborationPhase.SYNTHESIZE,
-        tokens: [''],  // Empty token to trigger panel activation
-        isComplete: false
-      } as TokenChunk
+    // Use FinalAnswerService to reliably stream the minimal synthesis
+    await this.finalAnswerService.generateFallbackAnswer({
+      sessionId: this.conversationState.sessionId,
+      modelId: this.GEMMA_MODEL_ID,
+      prompt: minimalSynthesis,
+      phase: CollaborationPhase.SYNTHESIZE,
+      routeToSynthesis: true
     });
-
-    // Stream the minimal synthesis token by token
-    const tokens = minimalSynthesis.split(' ');
-    for (const token of tokens) {
-      this.streamingService.addToken('synthesis', CollaborationPhase.SYNTHESIZE, token + ' ');
-      // Small delay to simulate streaming
-      await new Promise(resolve => setTimeout(resolve, 10));
-    }
-    this.streamingService.completeStream('synthesis', CollaborationPhase.SYNTHESIZE);
 
     // Store the minimal synthesis
     await this.conversationManager.addTurn(
@@ -1025,25 +969,14 @@ This is a critical correction - ensure accuracy!`;
       `Collaboration completed with ${this.conversationState.turns.length} total exchanges. Latest response: ${lastTurn.content.substring(0, 200)}...` :
       `Collaboration completed with ${this.conversationState.turns.length} total exchanges.`;
 
-    // Send initial synthesis update to trigger the panel
-    this.sendMessage({
-      type: SSEMessageType.SYNTHESIS_UPDATE,
-      payload: {
-        modelId: 'synthesis',
-        phase: CollaborationPhase.SYNTHESIZE,
-        tokens: [''],  // Empty token to trigger panel activation
-        isComplete: false
-      } as TokenChunk
+    // Use FinalAnswerService to reliably stream the summary
+    await this.finalAnswerService.generateFallbackAnswer({
+      sessionId: this.conversationState.sessionId,
+      modelId: this.GEMMA_MODEL_ID,
+      prompt: summary,
+      phase: CollaborationPhase.SYNTHESIZE,
+      routeToSynthesis: true
     });
-
-    // Stream the summary token by token
-    const tokens = summary.split(' ');
-    for (const token of tokens) {
-      this.streamingService.addToken('synthesis', CollaborationPhase.SYNTHESIZE, token + ' ');
-      // Small delay to simulate streaming
-      await new Promise(resolve => setTimeout(resolve, 10));
-    }
-    this.streamingService.completeStream('synthesis', CollaborationPhase.SYNTHESIZE);
 
     this.sendMessage({
       type: SSEMessageType.PHASE_UPDATE,

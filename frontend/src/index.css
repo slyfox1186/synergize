@@ -67,6 +67,182 @@
     animation: stream-in 0.3s ease-out;
   }
   
+  /* POWERFUL SYNERGISTIC RAINBOW ANIMATION */
+  @keyframes powerful-rainbow-wave {
+    /* 0% - 20%: Slow, powerful sweep from left to right */
+    0% {
+      background-position: -200% 50%;
+      background-size: 400% 400%;
+      transform: scale(1) rotateX(0deg);
+      text-shadow: 0 0 4px rgba(255, 255, 255, 0.05);
+      opacity: 0.85;
+    }
+    10% {
+      transform: scale(1.02) rotateX(-2deg);
+      text-shadow: 0 0 12px rgba(139, 68, 68, 0.4); /* Crimson pulse */
+    }
+    20% {
+      background-position: 200% 50%;
+      transform: scale(1.03) rotateX(2deg);
+      text-shadow: 0 0 16px rgba(155, 135, 12, 0.5); /* Gold pulse */
+    }
+
+    /* 20% - 40%: Dramatic reverse sweep with intensity */
+    25% {
+      background-position: 200% 50%;
+      transform: scale(1.03) rotateX(2deg);
+      text-shadow: 0 0 16px rgba(155, 135, 12, 0.5);
+    }
+    32% {
+      transform: scale(1.05) rotateX(0deg);
+      text-shadow: 0 0 20px rgba(75, 75, 139, 0.6); /* Slate blue surge */
+    }
+    40% {
+      background-position: -200% 50%;
+      transform: scale(1) rotateX(-2deg);
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+    }
+
+    /* 40% - 60%: The SYNERGY CONVERGENCE - dramatic inward pulse */
+    44% {
+      background-size: 600% 600%;
+      transform: scale(0.98) rotateX(0deg);
+      text-shadow: 0 0 4px rgba(255, 255, 255, 0.05);
+    }
+    52% {
+      background-size: 150% 150%; /* Tight focus */
+      transform: scale(1.08) rotateX(0deg); /* Bold push forward */
+      text-shadow: 
+        0 0 25px rgba(139, 68, 68, 0.5),
+        0 0 35px rgba(75, 75, 139, 0.4),
+        0 0 45px rgba(155, 135, 12, 0.3); /* Triple-layer glow */
+    }
+    60% {
+      background-size: 100% 100%; /* Maximum intensity */
+      transform: scale(1.1) rotateX(0deg);
+      text-shadow: 
+        0 0 30px rgba(91, 75, 107, 0.7), /* Deep indigo core */
+        0 0 50px rgba(107, 75, 107, 0.5); /* Purple corona */
+    }
+
+    /* 60% - 70%: GRACEFUL DISSOLUTION - smooth fade out */
+    63% {
+      background-size: 200% 200%;
+      transform: scale(1.08) rotateX(0deg);
+      text-shadow: 
+        0 0 25px rgba(91, 75, 107, 0.6),
+        0 0 40px rgba(107, 75, 107, 0.4);
+      opacity: 0.85;
+    }
+    66% {
+      background-size: 350% 350%;
+      transform: scale(1.04) rotateX(0deg);
+      text-shadow: 0 0 15px rgba(139, 68, 68, 0.3);
+      opacity: 0.75;
+    }
+    68% {
+      background-size: 500% 500%;
+      transform: scale(1.02) rotateX(0deg);
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.05);
+      opacity: 0.65;
+    }
+    70% {
+      background-position: -200% 50%;
+      background-size: 600% 600%;
+      transform: scale(1) rotateX(0deg);
+      text-shadow: 0 0 4px rgba(255, 255, 255, 0.02);
+      opacity: 0.5;
+    }
+
+    /* 70% - 85%: ETHEREAL BREATHING - gentle pulse during pause */
+    75% {
+      background-position: -200% 50%;
+      background-size: 650% 650%;
+      transform: scale(0.98) rotateX(0deg);
+      text-shadow: none;
+      opacity: 0.45;
+    }
+    80% {
+      background-position: -200% 50%;
+      background-size: 700% 700%;
+      transform: scale(0.97) rotateX(0deg);
+      text-shadow: none;
+      opacity: 0.4;
+    }
+    85% {
+      background-position: -200% 50%;
+      background-size: 650% 650%;
+      transform: scale(0.98) rotateX(0deg);
+      text-shadow: none;
+      opacity: 0.45;
+    }
+
+    /* 85% - 100%: REBIRTH PREPARATION - slowly building back up */
+    90% {
+      background-position: -200% 50%;
+      background-size: 600% 600%;
+      transform: scale(0.99) rotateX(0deg);
+      text-shadow: 0 0 2px rgba(255, 255, 255, 0.01);
+      opacity: 0.55;
+    }
+    95% {
+      background-position: -200% 50%;
+      background-size: 500% 500%;
+      transform: scale(1) rotateX(0deg);
+      text-shadow: 0 0 3px rgba(255, 255, 255, 0.03);
+      opacity: 0.7;
+    }
+    100% {
+      background-position: -200% 50%;
+      background-size: 400% 400%;
+      transform: scale(1) rotateX(0deg);
+      text-shadow: 0 0 4px rgba(255, 255, 255, 0.05);
+      opacity: 0.85;
+    }
+  }
+
+  .rainbow-text {
+    font-weight: 900;
+    font-size: 2.5rem;
+    
+    /* Single powerful conic gradient for smooth transitions */
+    background: conic-gradient(
+      from 180deg at 50% 50%,
+      #8B4444,     /* Muted crimson */
+      #8B5A2B,     /* Saddle brown */
+      #9B870C,     /* Dark goldenrod */
+      #7B7D3C,     /* Olive sage */
+      #4B6B4B,     /* Dark sage green */
+      #4B6B6B,     /* Teal grey */
+      #4B4B8B,     /* Slate blue */
+      #5B4B6B,     /* Deep indigo */
+      #6B4B6B,     /* Muted purple */
+      #7B5454,     /* Dusty rose */
+      #8B4444      /* Loop back to crimson */
+    );
+    
+    /* Static properties for text gradient effect */
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    
+    /* Initial state for animated properties */
+    background-size: 400% 400%;
+    background-position: -200% 50%;
+    opacity: 0.85;
+    
+    /* Apply the powerful animation with linear timing for precise control */
+    /* Total duration is 18s: 12s for animation (70%) + 6s for pause (30%) */
+    animation: powerful-rainbow-wave 18s linear infinite;
+    
+    /* Enable smooth transform and shadow transitions */
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    
+    /* Base shadow state */
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.05));
+  }
+  
   /* Pulsing text animation for critical information */
   @keyframes text-pulse {
     0%, 100% {

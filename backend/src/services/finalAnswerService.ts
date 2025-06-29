@@ -1,0 +1,406 @@
+/**
+ * FINAL ANSWER SERVICE
+ * 
+ * Single source of concern for handling final answer generation, streaming, and completion.
+ * This service ensures consistent and reliable final answer delivery across the system.
+ */
+
+import { ModelService } from './modelService.js';
+import { StreamingService } from './streamingService.js';
+import { ContextAllocator, TokenAllocation } from './contextAllocator.js';
+import { TokenCounter } from './tokenCounter.js';
+import { 
+  CollaborationPhase, 
+  SSEMessage, 
+  SSEMessageType,
+  TokenChunk
+} from '../models/types.js';
+import { LlamaContext, Token } from 'node-llama-cpp';
+import { createLogger } from '../utils/logger.js';
+import { config } from '../config.js';
+
+export interface FinalAnswerOptions {
+  sessionId: string;
+  modelId: string;
+  prompt: string;
+  phase: CollaborationPhase;
+  tokenAllocation?: TokenAllocation;
+  routeToSynthesis?: boolean;
+}
+
+export interface FinalAnswerResult {
+  content: string;
+  success: boolean;
+  tokenMetrics: {
+    promptTokens: number;
+    generatedTokens: number;
+    totalTokens: number;
+    generationTimeMs: number;
+    tokensPerSecond: number;
+  };
+}
+
+/**
+ * Dedicated service for final answer generation and streaming
+ * Ensures reliable completion and streaming of final responses
+ */
+export class FinalAnswerService {
+  private logger = createLogger('FinalAnswerService');
+  private contextAllocator: ContextAllocator;
+  private tokenCounter: TokenCounter;
+
+  constructor(
+    private modelService: ModelService,
+    private streamingService: StreamingService,
+    private sendMessage: (message: SSEMessage) => void
+  ) {
+    this.tokenCounter = new TokenCounter();
+    this.contextAllocator = new ContextAllocator(this.tokenCounter);
+    
+    this.logger.info('📝 FinalAnswerService initialized');
+  }
+
+  /**
+   * Generate and stream a final answer with guaranteed completion
+   */
+  async generateFinalAnswer(options: FinalAnswerOptions): Promise<FinalAnswerResult> {
+    const startTime = Date.now();
+    let context: LlamaContext | null = null;
+    
+    try {
+      this.logger.info('🎯 Starting final answer generation', {
+        sessionId: options.sessionId,
+        modelId: options.modelId,
+        phase: options.phase,
+        routeToSynthesis: options.routeToSynthesis
+      });
+
+      // Acquire model context
+      context = await this.modelService.acquireContext(options.modelId);
+      this.logger.info('📤 Model context acquired for final answer generation');
+
+      // Calculate token allocation if not provided
+      let allocation = options.tokenAllocation;
+      if (!allocation) {
+        const promptTokens = this.tokenCounter.countTokens(options.prompt);
+        allocation = this.contextAllocator.calculateAllocation(
+          options.phase,
+          config.model.contextSize || 4096,
+          '',
+          options.modelId,
+          'synthesis',
+          0
+        );
+        
+        this.logger.info(`🧮 Calculated token allocation for final answer`, {
+          promptTokens,
+          maxGenerationTokens: allocation.maxGenerationTokens
+        });
+      }
+
+      // Setup streaming routing if needed
+      const originalAddToken = this.streamingService.addToken.bind(this.streamingService);
+      const originalCompleteStream = this.streamingService.completeStream.bind(this.streamingService);
+      
+      if (options.routeToSynthesis) {
+        this.setupSynthesisRouting(originalAddToken, originalCompleteStream);
+      }
+
+      let finalAnswer = '';
+      
+      try {
+        // Send initial signal to activate the panel
+        if (options.routeToSynthesis) {
+          this.sendInitialSynthesisSignal();
+        }
+
+        // Generate the final answer
+        finalAnswer = await this.generateWithStreaming(
+          options.modelId,
+          context,
+          options.prompt,
+          options.phase,
+          allocation
+        );
+
+        // Ensure completion signal is sent
+        this.sendCompletionSignal(options.modelId, options.phase, options.routeToSynthesis);
+
+        const endTime = Date.now();
+        const generationTime = endTime - startTime;
+        
+        // Calculate metrics
+        const promptTokens = this.tokenCounter.countTokens(options.prompt);
+        const generatedTokens = this.tokenCounter.countTokens(finalAnswer);
+        const totalTokens = promptTokens + generatedTokens;
+        const tokensPerSecond = Math.round((generatedTokens / generationTime) * 1000);
+
+        this.logger.info('✅ Final answer generation completed successfully', {
+          sessionId: options.sessionId,
+          contentLength: finalAnswer.length,
+          tokenMetrics: {
+            promptTokens,
+            generatedTokens,
+            totalTokens,
+            generationTimeMs: generationTime,
+            tokensPerSecond
+          }
+        });
+
+        return {
+          content: finalAnswer,
+          success: true,
+          tokenMetrics: {
+            promptTokens,
+            generatedTokens,
+            totalTokens,
+            generationTimeMs: generationTime,
+            tokensPerSecond
+          }
+        };
+
+      } finally {
+        // Always restore original streaming methods
+        if (options.routeToSynthesis) {
+          this.restoreOriginalStreaming(originalAddToken, originalCompleteStream);
+        }
+      }
+
+    } catch (error) {
+      this.logger.error('❌ Final answer generation failed', {
+        sessionId: options.sessionId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      // Send error completion signal
+      this.sendErrorCompletionSignal(options.modelId, options.phase, options.routeToSynthesis);
+
+      return {
+        content: '',
+        success: false,
+        tokenMetrics: {
+          promptTokens: 0,
+          generatedTokens: 0,
+          totalTokens: 0,
+          generationTimeMs: Date.now() - startTime,
+          tokensPerSecond: 0
+        }
+      };
+
+    } finally {
+      // Always release context
+      if (context) {
+        this.modelService.releaseContext(options.modelId, context);
+        this.logger.info('📤 Model context released');
+      }
+    }
+  }
+
+  /**
+   * Setup routing to synthesis panel
+   */
+  private setupSynthesisRouting(
+    originalAddToken: (modelId: string, phase: CollaborationPhase, token: string) => void,
+    originalCompleteStream: (modelId: string, phase: CollaborationPhase) => void
+  ): void {
+    this.logger.info('🔀 Setting up synthesis panel routing');
+    
+    this.streamingService.addToken = (modelId: string, phase: CollaborationPhase, token: string): void => {
+      if (phase === CollaborationPhase.SYNTHESIZE) {
+        originalAddToken('synthesis', phase, token);
+      } else {
+        originalAddToken(modelId, phase, token);
+      }
+    };
+    
+    this.streamingService.completeStream = (modelId: string, phase: CollaborationPhase): void => {
+      if (phase === CollaborationPhase.SYNTHESIZE) {
+        originalCompleteStream('synthesis', phase);
+      } else {
+        originalCompleteStream(modelId, phase);
+      }
+    };
+  }
+
+  /**
+   * Restore original streaming methods
+   */
+  private restoreOriginalStreaming(
+    originalAddToken: (modelId: string, phase: CollaborationPhase, token: string) => void,
+    originalCompleteStream: (modelId: string, phase: CollaborationPhase) => void
+  ): void {
+    this.logger.info('🔄 Restoring original streaming methods');
+    this.streamingService.addToken = originalAddToken;
+    this.streamingService.completeStream = originalCompleteStream;
+  }
+
+  /**
+   * Send initial signal to activate synthesis panel
+   */
+  private sendInitialSynthesisSignal(): void {
+    this.logger.info('🎬 Sending initial synthesis panel activation signal');
+    
+    this.sendMessage({
+      type: SSEMessageType.SYNTHESIS_UPDATE,
+      payload: {
+        modelId: 'synthesis',
+        phase: CollaborationPhase.SYNTHESIZE,
+        tokens: [''],  // Empty token to trigger panel activation
+        isComplete: false
+      } as TokenChunk
+    });
+  }
+
+  /**
+   * Generate content with streaming
+   */
+  private async generateWithStreaming(
+    modelId: string,
+    context: LlamaContext,
+    prompt: string,
+    phase: CollaborationPhase,
+    allocation: TokenAllocation
+  ): Promise<string> {
+    const modelConfig = this.modelService.getModelConfig(modelId);
+    if (!modelConfig) {
+      throw new Error(`Model config not found for ${modelId}`);
+    }
+
+    this.logger.info('🚀 Starting streaming generation', {
+      modelId,
+      phase,
+      maxTokens: allocation.maxGenerationTokens
+    });
+
+    // Get a sequence for this generation
+    const sequence = context.getSequence();
+    
+    // Create chat session
+    const { LlamaChatSession } = await import('node-llama-cpp');
+    const session = new LlamaChatSession({
+      contextSequence: sequence,
+      systemPrompt: ''
+    });
+
+    let tokenCount = 0;
+
+    const generationOptions = {
+      temperature: modelConfig.settings.temperature,
+      topP: modelConfig.settings.topP,
+      topK: modelConfig.settings.topK,
+      minP: modelConfig.settings.minP,
+      maxTokens: allocation.maxGenerationTokens,
+      onToken: (tokens: Token[]): void => {
+        // Detokenize tokens
+        const tokenText = context.model.detokenize(tokens, false);
+        
+        if (tokenText) {
+          tokenCount += tokens.length;
+          
+          // Stream the token
+          this.streamingService.addToken(modelId, phase, tokenText);
+          
+          this.logger.debug('📤 Token streamed', {
+            tokenText: tokenText.slice(0, 20) + (tokenText.length > 20 ? '...' : ''),
+            tokenCount
+          });
+        }
+      }
+    };
+
+    // Generate response
+    const response = await session.prompt(prompt, generationOptions);
+    
+    this.logger.info('📝 Generation completed', {
+      responseLength: response.length,
+      tokensGenerated: tokenCount
+    });
+
+    return response;
+  }
+
+  /**
+   * Send completion signal
+   */
+  private sendCompletionSignal(
+    modelId: string, 
+    phase: CollaborationPhase, 
+    routeToSynthesis: boolean = false
+  ): void {
+    const targetModelId = routeToSynthesis && phase === CollaborationPhase.SYNTHESIZE ? 'synthesis' : modelId;
+    
+    this.logger.info('✅ Sending completion signal', {
+      originalModelId: modelId,
+      targetModelId,
+      phase,
+      routeToSynthesis
+    });
+    
+    this.streamingService.completeStream(targetModelId, phase);
+    
+    // Additional completion message for synthesis
+    if (routeToSynthesis && phase === CollaborationPhase.SYNTHESIZE) {
+      this.sendMessage({
+        type: SSEMessageType.PHASE_UPDATE,
+        payload: { 
+          phase: CollaborationPhase.CONSENSUS, 
+          status: 'synthesis_complete'
+        }
+      });
+    }
+  }
+
+  /**
+   * Send error completion signal
+   */
+  private sendErrorCompletionSignal(
+    modelId: string, 
+    phase: CollaborationPhase, 
+    routeToSynthesis: boolean = false
+  ): void {
+    const targetModelId = routeToSynthesis && phase === CollaborationPhase.SYNTHESIZE ? 'synthesis' : modelId;
+    
+    this.logger.warn('⚠️ Sending error completion signal', {
+      originalModelId: modelId,
+      targetModelId,
+      phase
+    });
+    
+    // Send completion even on error to prevent hanging
+    this.streamingService.completeStream(targetModelId, phase);
+  }
+
+  /**
+   * Generate fallback response when main generation fails
+   */
+  async generateFallbackAnswer(options: FinalAnswerOptions): Promise<FinalAnswerResult> {
+    this.logger.warn('🔄 Generating fallback answer', {
+      sessionId: options.sessionId,
+      modelId: options.modelId
+    });
+
+    const fallbackContent = "I apologize, but I encountered an issue generating the final response. Please try again.";
+    
+    // Stream the fallback content
+    if (options.routeToSynthesis) {
+      this.sendInitialSynthesisSignal();
+      this.streamingService.addToken('synthesis', options.phase, fallbackContent);
+      this.sendCompletionSignal(options.modelId, options.phase, true);
+    } else {
+      this.streamingService.addToken(options.modelId, options.phase, fallbackContent);
+      this.sendCompletionSignal(options.modelId, options.phase, false);
+    }
+
+    return {
+      content: fallbackContent,
+      success: false,
+      tokenMetrics: {
+        promptTokens: 0,
+        generatedTokens: this.tokenCounter.countTokens(fallbackContent),
+        totalTokens: this.tokenCounter.countTokens(fallbackContent),
+        generationTimeMs: 0,
+        tokensPerSecond: 0
+      }
+    };
+  }
+}

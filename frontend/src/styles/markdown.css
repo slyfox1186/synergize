@@ -1,257 +1,482 @@
-/* Markdown content styling */
+/* ============================================================================
+   PROFESSIONAL NEURAL ACTIVATION COLOR SYSTEM
+   High-performance color engineering for maximum cognitive engagement
+   ============================================================================ */
+
+/* ============================================================================
+   EXECUTIVE POWER PALETTE - Sharp, Sophisticated, Stimulating
+   ============================================================================ */
+:root {
+  /* TITANIUM SLATE FOUNDATIONS - Professional depth with energy */
+  --md-bg-primary: #2C3E50;           /* EXECUTIVE SLATE - Sophisticated base */
+  --md-bg-secondary: #34495E;         /* STEEL BLUE - Professional depth */
+  --md-bg-tertiary: #41576B;          /* GUNMETAL - Code containers */
+  --md-bg-accent: #4E6A7E;            /* CHROMIUM - Accent zones */
+  
+  /* CRISP CONTRAST TEXT - Maximum readability */
+  --md-text-primary: #FFFFFF;         /* PURE WHITE - Ultimate clarity */
+  --md-text-secondary: #F5F5F5;       /* PLATINUM - Secondary text */
+  --md-text-muted: #E0E0E0;           /* SILVER - Muted elements */
+  
+  /* ELECTRIC ACCENT SPECTRUM - Mind-activating highlights */
+  --md-orange-bright: #FF6B35;        /* SUNSET BURST - Primary power */
+  --md-orange-medium: #FF8C42;        /* TANGERINE FIRE - Secondary energy */
+  --md-orange-soft: #FFA552;          /* GOLDEN FLAME - Tertiary warmth */
+  --md-coral: #E63946;                /* FERRARI RED - Critical emphasis */
+  --md-amber: #F77F00;                /* MARIGOLD - Special highlights */
+  --md-gold: #FCBF49;                 /* SUNBURST - Maximum importance */
+  --md-red-accent: #D62828;           /* CRIMSON ALERT - Urgent attention */
+  
+  /* POWER ACCENT SPECTRUM - Maximum contrast and impact */
+  --md-baby-blue: #FFD93D;            /* LIGHTNING YELLOW - Code brilliance */
+  --md-sky-blue: #6BCF7F;             /* EMERALD GLOW - Links/interactive */
+  --md-powder-blue: #FF6B9D;          /* HOT MAGENTA - Power accents */
+  --md-ice-blue: #C7F464;             /* LIME SURGE - Light highlights */
+  
+  /* Interactive Colors */
+  --md-link: var(--md-sky-blue);
+  --md-link-hover: var(--md-baby-blue);
+  
+  /* HIGH-IMPACT BORDERS - Maximum visibility */
+  --md-border-subtle: rgba(255, 107, 53, 0.4);
+  --md-border-medium: rgba(255, 107, 53, 0.7);
+  --md-border-strong: rgba(255, 107, 53, 1.0);
+  --md-border-blue-subtle: rgba(255, 217, 61, 0.5);
+  --md-border-blue-medium: rgba(255, 217, 61, 0.8);
+}
+
+/* ============================================================================
+   BASE MARKDOWN CONTAINER
+   ============================================================================ */
 .markdown-content {
-  color: inherit;
-  line-height: 1.6;
+  color: var(--md-text-primary);
+  line-height: 1.7;
+  font-size: 16px;
+  background-color: transparent;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
-/* MathJax styling for synergy theme */
-.markdown-content .MathJax {
-  color: #e0e0e0 !important; /* synergy-text color */
-}
+/* ============================================================================
+   TYPOGRAPHY HIERARCHY - Warm Color Gradation
+   ============================================================================ */
 
-.markdown-content .MathJax_Display {
-  margin: 1rem 0 !important;
-  text-align: center !important;
-}
-
-.markdown-content .MathJax svg {
-  color: #00d4ff !important; /* synergy-primary color for math expressions */
-}
-
-.markdown-content .MathJax_Error {
-  color: #ff6b6b !important;
-  background-color: rgba(255, 107, 107, 0.1) !important;
-  border: 1px solid #ff6b6b !important;
-  border-radius: 0.25rem !important;
-  padding: 0.25rem !important;
-}
-
-/* Code blocks */
-.markdown-content pre {
-  background-color: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(0, 255, 255, 0.2);
-  border-radius: 0.375rem;
-  padding: 1rem;
-  overflow-x: auto;
-  margin: 1rem 0;
-}
-
-.markdown-content pre code {
-  background: none;
-  padding: 0;
-  border: none;
-  font-size: 0.875rem;
-  color: #00ffff;
-}
-
-/* Inline code */
-.markdown-content code {
-  background-color: rgba(0, 255, 255, 0.1);
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
-  font-size: 0.875em;
-  color: #00ffff;
-}
-
-/* Headings with enhanced size hierarchy */
+/* Main Headings - Decreasing warmth/brightness for hierarchy */
 .markdown-content h1 {
-  font-size: 2.5rem;
+  font-size: 2.25rem;
   font-weight: 800;
-  margin-top: 2em;
-  margin-bottom: 0.75em;
-  color: #00ffff;
-  text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
-  letter-spacing: 0.05em;
-  line-height: 1.2;
+  color: var(--md-orange-bright);
+  margin: 2rem 0 1rem 0;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  border-bottom: 2px solid var(--md-border-medium);
+  padding-bottom: 0.5rem;
 }
 
 .markdown-content h2 {
-  font-size: 2rem;
+  font-size: 1.875rem;
   font-weight: 700;
-  margin-top: 1.75em;
-  margin-bottom: 0.6em;
-  color: #00ffff;
-  text-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
-  letter-spacing: 0.03em;
+  color: var(--md-orange-medium);
+  margin: 1.75rem 0 0.875rem 0;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
 }
 
 .markdown-content h3 {
   font-size: 1.5rem;
   font-weight: 600;
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
-  color: #00d4ff;
-  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  color: var(--md-orange-soft);
+  margin: 1.5rem 0 0.75rem 0;
+  line-height: 1.4;
 }
 
 .markdown-content h4 {
   font-size: 1.25rem;
   font-weight: 600;
-  margin-top: 1.25em;
-  margin-bottom: 0.4em;
-  color: #00d4ff;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+  color: var(--md-coral);
+  margin: 1.25rem 0 0.625rem 0;
+  line-height: 1.4;
 }
 
-/* Lists */
-.markdown-content ul,
+.markdown-content h5 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--md-amber);
+  margin: 1rem 0 0.5rem 0;
+  line-height: 1.5;
+}
+
+.markdown-content h6 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--md-gold);
+  margin: 0.875rem 0 0.4375rem 0;
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================================
+   TEXT EMPHASIS AND FORMATTING
+   ============================================================================ */
+
+/* Strong/Bold Text */
+.markdown-content strong,
+.markdown-content b {
+  font-weight: 700;
+  color: var(--md-coral);
+  font-size: 1.02em;
+}
+
+/* Emphasis/Italic Text */
+.markdown-content em,
+.markdown-content i {
+  font-style: italic;
+  color: var(--md-amber);
+  font-size: 1.01em;
+}
+
+/* Combined Bold + Italic */
+.markdown-content strong em,
+.markdown-content b i,
+.markdown-content em strong,
+.markdown-content i b {
+  font-weight: 700;
+  font-style: italic;
+  color: var(--md-gold);
+  font-size: 1.05em;
+}
+
+/* Links */
+.markdown-content a {
+  color: var(--md-link);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 107, 74, 0.5);
+  text-underline-offset: 0.2em;
+  transition: all 0.2s ease;
+}
+
+.markdown-content a:hover {
+  color: var(--md-link-hover);
+  text-decoration-color: var(--md-link-hover);
+}
+
+/* ============================================================================
+   CODE BLOCKS AND INLINE CODE
+   ============================================================================ */
+
+/* Code Blocks */
+.markdown-content pre {
+  background-color: var(--md-bg-tertiary);
+  border: 1px solid var(--md-border-blue-subtle);
+  border-left: 4px solid var(--md-baby-blue);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.markdown-content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--md-powder-blue);
+  font-size: inherit;
+}
+
+/* Inline Code */
+.markdown-content code {
+  background-color: var(--md-bg-accent);
+  color: var(--md-baby-blue);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 0.9em;
+  font-weight: 500;
+  border: 1px solid var(--md-border-blue-subtle);
+}
+
+/* ============================================================================
+   LISTS AND STRUCTURE
+   ============================================================================ */
+
+/* Unordered Lists */
+.markdown-content ul {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.markdown-content ul li {
+  margin: 0.5rem 0;
+  position: relative;
+}
+
+.markdown-content ul li::marker {
+  color: var(--md-coral);
+}
+
+/* Ordered Lists */
 .markdown-content ol {
   margin: 1rem 0;
   padding-left: 2rem;
 }
 
-.markdown-content li {
+.markdown-content ol li {
+  margin: 0.5rem 0;
+}
+
+.markdown-content ol li::marker {
+  color: var(--md-orange-medium);
+  font-weight: 600;
+}
+
+/* Nested Lists */
+.markdown-content li ul,
+.markdown-content li ol {
   margin: 0.25rem 0;
 }
 
-/* Bold text - extra prominent */
-.markdown-content strong,
-.markdown-content b {
-  color: #00ffff;
-  font-weight: 800;
-  font-size: 1.05em;
-  text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
-  letter-spacing: 0.02em;
-}
-
-/* Double emphasis (bold + italic) */
-.markdown-content strong em,
-.markdown-content b i,
-.markdown-content em strong,
-.markdown-content i b {
-  color: #00ffff;
-  font-weight: 900;
-  font-size: 1.1em;
-  font-style: italic;
-  text-shadow: 0 0 12px rgba(0, 255, 255, 0.8);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-  text-decoration-color: rgba(0, 255, 255, 0.5);
-}
-
-/* Emphasis text */
-.markdown-content em,
-.markdown-content i {
-  color: #00d4ff;
-  font-style: italic;
-  font-size: 1.02em;
-}
-
-/* Links */
-.markdown-content a {
-  color: #00ffff;
-  text-decoration: underline;
-  transition: opacity 0.2s;
-}
-
-.markdown-content a:hover {
-  opacity: 0.8;
-}
-
-/* Blockquotes */
+/* ============================================================================
+   BLOCKQUOTES
+   ============================================================================ */
 .markdown-content blockquote {
-  border-left: 4px solid rgba(0, 255, 255, 0.5);
-  padding-left: 1rem;
-  margin: 1rem 0;
+  background-color: var(--md-bg-secondary);
+  border-left: 4px solid var(--md-coral);
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+  border-radius: 0 6px 6px 0;
   font-style: italic;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--md-text-secondary);
+  position: relative;
 }
 
-/* Tables - Override prose styles and force proper wrapping */
+.markdown-content blockquote::before {
+  content: '"';
+  color: var(--md-coral);
+  font-size: 3rem;
+  line-height: 1;
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  font-family: serif;
+  opacity: 0.3;
+}
+
+.markdown-content blockquote p {
+  margin: 0.5rem 0;
+}
+
+/* ============================================================================
+   TABLES
+   ============================================================================ */
 .markdown-content table {
-  width: 100% !important;
+  width: 100%;
   border-collapse: collapse;
-  margin: 1rem 0;
-  table-layout: fixed !important; /* Force table to respect container width */
-  max-width: 100% !important;
-  overflow: visible !important; /* Override any prose overflow settings */
-}
-
-.markdown-content th,
-.markdown-content td {
-  border: 1px solid rgba(0, 255, 255, 0.2);
-  padding: 0.5rem;
-  text-align: left;
-  word-wrap: break-word !important;
-  word-break: break-word !important;
-  overflow-wrap: break-word !important;
-  hyphens: auto;
-  vertical-align: top;
-  white-space: normal !important; /* Override any prose white-space settings */
-  overflow: visible !important;
+  margin: 1.5rem 0;
+  background-color: var(--md-bg-secondary);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(255, 217, 61, 0.3), 0 0 20px rgba(255, 107, 53, 0.2);
 }
 
 .markdown-content th {
-  background-color: rgba(0, 255, 255, 0.1);
+  background-color: var(--md-bg-accent);
+  color: var(--md-orange-bright);
   font-weight: 600;
+  padding: 0.875rem 1rem;
+  text-align: left;
+  border-bottom: 2px solid var(--md-border-medium);
 }
 
-/* Handle code blocks within tables */
+.markdown-content td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--md-border-subtle);
+  vertical-align: top;
+}
+
+.markdown-content tr:last-child td {
+  border-bottom: none;
+}
+
+.markdown-content tr:nth-child(even) {
+  background-color: rgba(255, 140, 66, 0.05);
+}
+
+/* Table Code */
 .markdown-content td code,
 .markdown-content th code {
-  word-break: break-all !important;
-  white-space: pre-wrap !important;
-  overflow-wrap: break-word !important;
+  background-color: var(--md-bg-primary);
+  font-size: 0.85em;
 }
 
-/* Override any prose table container styles */
-.prose .markdown-content table,
-.prose-invert .markdown-content table {
-  width: 100% !important;
-  table-layout: fixed !important;
-  max-width: 100% !important;
+/* ============================================================================
+   MATHEMATICAL CONTENT (MathJax Integration)
+   ============================================================================ */
+.markdown-content .MathJax {
+  color: var(--md-gold) !important;
+  background-color: var(--md-bg-secondary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--md-border-subtle);
 }
 
-/* Ensure the parent containers don't create horizontal scroll */
-.markdown-content {
-  overflow-x: visible !important;
-  max-width: 100% !important;
+.markdown-content .MathJax_Display {
+  background-color: var(--md-bg-tertiary);
+  margin: 1.5rem 0 !important;
+  padding: 1rem !important;
+  border-radius: 8px;
+  border: 1px solid var(--md-border-medium);
+  text-align: center !important;
 }
 
-/* Horizontal rules */
+.markdown-content .MathJax svg {
+  color: var(--md-gold) !important;
+}
+
+.markdown-content .MathJax_Error {
+  color: var(--md-red-accent) !important;
+  background-color: rgba(231, 76, 60, 0.1) !important;
+  border: 1px solid var(--md-red-accent) !important;
+  border-radius: 4px !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+/* ============================================================================
+   HORIZONTAL RULES
+   ============================================================================ */
 .markdown-content hr {
   border: none;
-  border-top: 1px solid rgba(0, 255, 255, 0.3);
-  margin: 2rem 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--md-border-medium),
+    transparent
+  );
+  margin: 2.5rem 0;
 }
 
-/* Special emphasis for key answers/results */
+/* ============================================================================
+   SPECIAL CONTENT HIGHLIGHTING
+   ============================================================================ */
+
+/* Key Result Boxes - When a paragraph contains only bold text */
 .markdown-content p strong:first-child:last-child {
   display: inline-block;
-  font-size: 1.2em;
-  padding: 0.5rem 1rem;
-  margin: 0.5rem 0;
-  background: rgba(0, 255, 255, 0.1);
-  border: 2px solid rgba(0, 255, 255, 0.5);
-  border-radius: 0.5rem;
-  text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+  background: linear-gradient(135deg, var(--md-bg-accent), var(--md-bg-tertiary));
+  color: var(--md-gold);
+  font-size: 1.125rem;
+  font-weight: 700;
+  padding: 0.75rem 1.25rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+  border: 2px solid var(--md-border-medium);
+  border-left: 4px solid var(--md-coral);
 }
 
-/* Highlighted sections with background */
-.markdown-content blockquote strong {
-  background: rgba(0, 255, 255, 0.15);
-  padding: 0.1rem 0.3rem;
-  border-radius: 0.2rem;
-}
-
-/* Code emphasis within text */
-.markdown-content p code {
-  font-size: 1.05em;
+/* Highlighted/Marked Text */
+.markdown-content mark,
+.markdown-content .highlight {
+  background-color: var(--md-amber);
+  color: var(--md-bg-primary);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
   font-weight: 600;
-  background-color: rgba(0, 255, 255, 0.2);
-  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
 }
 
-/* Ensure last element has proper spacing */
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+@media (max-width: 768px) {
+  .markdown-content {
+    font-size: 15px;
+  }
+  
+  .markdown-content h1 {
+    font-size: 1.875rem;
+  }
+  
+  .markdown-content h2 {
+    font-size: 1.5rem;
+  }
+  
+  .markdown-content h3 {
+    font-size: 1.25rem;
+  }
+  
+  .markdown-content pre {
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+  
+  .markdown-content table {
+    font-size: 0.9rem;
+  }
+  
+  .markdown-content th,
+  .markdown-content td {
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* ============================================================================
+   PERFORMANCE OPTIMIZATIONS
+   ============================================================================ */
+
+/* Smooth scrolling for anchor links */
+.markdown-content {
+  scroll-behavior: smooth;
+}
+
+/* Optimize font rendering */
+.markdown-content {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure last element doesn't have extra margin */
 .markdown-content > *:last-child {
   margin-bottom: 0;
 }
 
-/* Ensure highlighted/marked text is fully visible */
-.markdown-content mark,
-.markdown-content .highlight {
-  display: inline-block;
-  padding: 0.1em 0.2em;
-  margin: 0.1em 0;
+/* Ensure first element doesn't have extra margin */
+.markdown-content > *:first-child {
+  margin-top: 0;
+}
+
+/* ============================================================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================================================ */
+
+/* Focus indicators for interactive elements */
+.markdown-content a:focus {
+  outline: 2px solid var(--md-coral);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --md-text-primary: #ffffff;
+    --md-orange-bright: #ff9f00;
+    --md-coral: #ff7a5c;
+    --md-border-medium: rgba(255, 140, 66, 0.8);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .markdown-content {
+    scroll-behavior: auto;
+  }
+  
+  .markdown-content a {
+    transition: none;
+  }
 }

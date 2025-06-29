@@ -101,9 +101,9 @@ ${modifiedUserPrompt}<|im_end|>
     const modelName = modelConfig.name.toLowerCase();
     
     if (modelName.includes('gemma')) {
-      return ['<end_of_turn>', '<start_of_turn>'].some(stop => token.includes(stop));
+      return ['<end_of_turn>', '<start_of_turn>'].some(stop => token === stop);
     } else if (modelName.includes('qwen')) {
-      return ['<|im_end|>', '<|im_start|>'].some(stop => token.includes(stop));
+      return ['<|im_end|>', '<|im_start|>'].some(stop => token === stop);
     }
     
     return false;
