@@ -8,14 +8,28 @@ export default {
     extend: {
       colors: {
         synergy: {
-          primary: '#FFD93D',     // LIGHTNING YELLOW - Maximum visibility
-          secondary: '#FF6B35',   // SUNSET BURST - Power orange
-          accent: '#6BCF7F',      // EMERALD GLOW - Success green
-          dark: '#34495E',        // STEEL BLUE - Professional depth
-          darker: '#2C3E50',      // EXECUTIVE SLATE - Sophisticated base
-          light: '#41576B',       // GUNMETAL - Elevated containers
-          text: '#FFFFFF',        // PURE WHITE - Maximum clarity
-          muted: '#E0E0E0'        // SILVER - Subtle elements
+          // PRIMARY ACCENTS - Electric Blue & Orange Theme
+          primary: '#1E90FF',     // ELECTRIC BLUE - Primary interactive elements
+          secondary: '#FF8C00',   // VIVID AMBER - Secondary accents & CTAs
+          accent: '#4CD964',      // BRIGHT GREEN - Success states
+          
+          // BACKGROUND SYSTEM - Premium dark with depth
+          darker: '#121212',      // RICH CHARCOAL - Main background
+          dark: '#1A1A1A',        // ELEVATED CHARCOAL - Card backgrounds
+          light: '#232323',       // LIGHTER CHARCOAL - Hover states
+          
+          // TEXT HIERARCHY
+          text: '#F0F0F0',        // OFF-WHITE - Primary text
+          muted: '#A8A8A8',       // MID-GRAY - Secondary text
+          
+          // SEMANTIC COLORS
+          error: '#FF4433',       // BOLD RED - Error states
+          warning: '#FF8C00',     // AMBER - Warning states
+          success: '#4CD964',     // GREEN - Success feedback
+          
+          // GLOW EFFECTS
+          'glow-blue': '#1E90FF',
+          'glow-orange': '#FF8C00'
         }
       },
       animation: {

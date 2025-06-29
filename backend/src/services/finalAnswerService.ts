@@ -275,48 +275,53 @@ export class FinalAnswerService {
     // Get a sequence for this generation
     const sequence = context.getSequence();
     
-    // Create chat session
-    const { LlamaChatSession } = await import('node-llama-cpp');
-    const session = new LlamaChatSession({
-      contextSequence: sequence,
-      systemPrompt: ''
-    });
+    try {
+      // Create chat session
+      const { LlamaChatSession } = await import('node-llama-cpp');
+      const session = new LlamaChatSession({
+        contextSequence: sequence,
+        systemPrompt: ''
+      });
 
-    let tokenCount = 0;
+      let tokenCount = 0;
 
-    const generationOptions = {
-      temperature: modelConfig.settings.temperature,
-      topP: modelConfig.settings.topP,
-      topK: modelConfig.settings.topK,
-      minP: modelConfig.settings.minP,
-      maxTokens: allocation.maxGenerationTokens,
-      onToken: (tokens: Token[]): void => {
-        // Detokenize tokens
-        const tokenText = context.model.detokenize(tokens, false);
-        
-        if (tokenText) {
-          tokenCount += tokens.length;
+      const generationOptions = {
+        temperature: modelConfig.settings.temperature,
+        topP: modelConfig.settings.topP,
+        topK: modelConfig.settings.topK,
+        minP: modelConfig.settings.minP,
+        maxTokens: allocation.maxGenerationTokens,
+        onToken: (tokens: Token[]): void => {
+          // Detokenize tokens
+          const tokenText = context.model.detokenize(tokens, false);
           
-          // Stream the token
-          this.streamingService.addToken(modelId, phase, tokenText);
-          
-          this.logger.debug('📤 Token streamed', {
-            tokenText: tokenText.slice(0, 20) + (tokenText.length > 20 ? '...' : ''),
-            tokenCount
-          });
+          if (tokenText) {
+            tokenCount += tokens.length;
+            
+            // Stream the token
+            this.streamingService.addToken(modelId, phase, tokenText);
+            
+            this.logger.debug('📤 Token streamed', {
+              tokenText: tokenText.slice(0, 20) + (tokenText.length > 20 ? '...' : ''),
+              tokenCount
+            });
+          }
         }
-      }
-    };
+      };
 
-    // Generate response
-    const response = await session.prompt(prompt, generationOptions);
-    
-    this.logger.info('📝 Generation completed', {
-      responseLength: response.length,
-      tokensGenerated: tokenCount
-    });
+      // Generate response
+      const response = await session.prompt(prompt, generationOptions);
+      
+      this.logger.info('📝 Generation completed', {
+        responseLength: response.length,
+        tokensGenerated: tokenCount
+      });
 
-    return response;
+      return response;
+    } finally {
+      // CRITICAL: Always dispose of the sequence to prevent "No sequences left" error
+      sequence.dispose();
+    }
   }
 
   /**

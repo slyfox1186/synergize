@@ -273,64 +273,69 @@ export class QwenThinkingService {
     // Get a sequence for this generation
     const sequence = context.getSequence();
     
-    // Create chat session
-    const { LlamaChatSession } = await import('node-llama-cpp');
-    const session = new LlamaChatSession({
-      contextSequence: sequence,
-      systemPrompt: ''  // Prompt already includes system context
-    });
+    try {
+      // Create chat session
+      const { LlamaChatSession } = await import('node-llama-cpp');
+      const session = new LlamaChatSession({
+        contextSequence: sequence,
+        systemPrompt: ''  // Prompt already includes system context
+      });
 
-    let tokenCount = 0;
+      let tokenCount = 0;
 
-    const generationOptions = {
-      // Use THINKING MODE SETTINGS instead of normal settings
-      temperature: THINKING_MODE_SETTINGS.temperature,
-      topP: THINKING_MODE_SETTINGS.topP,
-      topK: THINKING_MODE_SETTINGS.topK,
-      minP: THINKING_MODE_SETTINGS.minP,
-      repeatPenalty: {
-        penalty: THINKING_MODE_SETTINGS.repeatPenalty,
-        frequencyPenalty: 0,
-        presencePenalty: 0
-      },
-      maxTokens: options.maxTokens || allocation.maxGenerationTokens,
-      customStopTriggers: formatted.stopTokens,
-      onToken: options.stream !== false ? (tokens: Token[]): void => {
-        // Detokenize tokens
-        const tokenText = context.model.detokenize(tokens, false);
-        
-        if (tokenText) {
-          tokenCount += tokens.length;
+      const generationOptions = {
+        // Use THINKING MODE SETTINGS instead of normal settings
+        temperature: THINKING_MODE_SETTINGS.temperature,
+        topP: THINKING_MODE_SETTINGS.topP,
+        topK: THINKING_MODE_SETTINGS.topK,
+        minP: THINKING_MODE_SETTINGS.minP,
+        repeatPenalty: {
+          penalty: THINKING_MODE_SETTINGS.repeatPenalty,
+          frequencyPenalty: 0,
+          presencePenalty: 0
+        },
+        maxTokens: options.maxTokens || allocation.maxGenerationTokens,
+        customStopTriggers: formatted.stopTokens,
+        onToken: options.stream !== false ? (tokens: Token[]): void => {
+          // Detokenize tokens
+          const tokenText = context.model.detokenize(tokens, false);
           
-          // Stream the token if enabled
-          if (options.stream !== false) {
-            this.streamingService.addToken(
-              options.routeToSynthesis ? 'synthesis' : this.qwenModelId, 
-              options.phase, 
-              tokenText
-            );
+          if (tokenText) {
+            tokenCount += tokens.length;
+            
+            // Stream the token if enabled
+            if (options.stream !== false) {
+              this.streamingService.addToken(
+                options.routeToSynthesis ? 'synthesis' : this.qwenModelId, 
+                options.phase, 
+                tokenText
+              );
+            }
           }
-        }
-      } : undefined
-    };
+        } : undefined
+      };
 
-    // Generate response
-    const response = await session.prompt(formatted.prompt, generationOptions);
-    
-    if (options.stream !== false) {
-      // Complete the stream
-      this.streamingService.completeStream(
-        options.routeToSynthesis ? 'synthesis' : this.qwenModelId,
-        options.phase
-      );
+      // Generate response
+      const response = await session.prompt(formatted.prompt, generationOptions);
+      
+      if (options.stream !== false) {
+        // Complete the stream
+        this.streamingService.completeStream(
+          options.routeToSynthesis ? 'synthesis' : this.qwenModelId,
+          options.phase
+        );
+      }
+
+      this.logger.info('📝 Thinking mode generation completed', {
+        responseLength: response.length,
+        tokensGenerated: tokenCount
+      });
+
+      return response;
+    } finally {
+      // CRITICAL: Always dispose of the sequence to prevent "No sequences left" error
+      sequence.dispose();
     }
-
-    this.logger.info('📝 Thinking mode generation completed', {
-      responseLength: response.length,
-      tokensGenerated: tokenCount
-    });
-
-    return response;
   }
 
   /**
