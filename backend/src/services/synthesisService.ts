@@ -317,7 +317,11 @@ Create a comprehensive, well-formatted synthesis that effectively addresses the 
       for (let j = 0; j < vectorsB.length; j++) {
         if (processedB.has(j) || !vectorsB[j].vector) continue;
         
-        const similarity = this.cosineSimilarity(vectorsA[i].vector!, vectorsB[j].vector!);
+        const vectorA = vectorsA[i].vector;
+        const vectorB = vectorsB[j].vector;
+        if (!vectorA || !vectorB) continue;
+        
+        const similarity = this.cosineSimilarity(vectorA, vectorB);
         if (similarity > bestSimilarity) {
           bestSimilarity = similarity;
           bestMatch = j;

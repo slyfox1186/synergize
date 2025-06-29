@@ -97,7 +97,7 @@ app.get('/api/models', (_req, res, next) => {
   
   modelService.getAvailableModels()
     .then((models) => {
-      logger.info(`[GET /api/models] Returning ${models.length} models:`, models);
+      logger.info(`[GET /api/models] Returning ${models.length} models:`, { models });
       res.json({ models });
     })
     .catch((error: Error) => {

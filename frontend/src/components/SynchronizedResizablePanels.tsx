@@ -5,11 +5,13 @@ interface SynchronizedResizablePanelsProps {
     title: string;
     content: ReactNode;
     onCopy: () => void;
+    onFocus?: () => void;
   };
   rightPanel: {
     title: string;
     content: ReactNode;
     onCopy: () => void;
+    onFocus?: () => void;
   };
   minHeight?: number;
   maxHeight?: number;
@@ -82,6 +84,9 @@ export function SynchronizedResizablePanels({
           <div 
             style={{ height: `${height}px` }}
             className="overflow-y-auto bg-jarvis-darker rounded"
+            onClick={leftPanel.onFocus}
+            onFocus={leftPanel.onFocus}
+            tabIndex={0}
           >
             <div className="p-4 pb-8">
               {leftPanel.content}
@@ -113,6 +118,9 @@ export function SynchronizedResizablePanels({
           <div 
             style={{ height: `${height}px` }}
             className="overflow-y-auto bg-jarvis-darker rounded"
+            onClick={rightPanel.onFocus}
+            onFocus={rightPanel.onFocus}
+            tabIndex={0}
           >
             <div className="p-4 pb-8">
               {rightPanel.content}

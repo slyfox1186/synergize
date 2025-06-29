@@ -48,12 +48,16 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
   const [hasScrolledToSynthesis, setHasScrolledToSynthesis] = useState(false);
   const [isSynthesisActive, setIsSynthesisActive] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const beforeUnloadHandlerRef = useRef<((e: BeforeUnloadEvent) => string) | null>(null);
 
-  // Cleanup timeout on unmount
+  // Cleanup timeout and beforeunload handler on unmount
   useEffect(() => {
     return (): void => {
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
+      }
+      if (beforeUnloadHandlerRef.current) {
+        window.removeEventListener('beforeunload', beforeUnloadHandlerRef.current);
       }
     };
   }, []);
@@ -106,6 +110,14 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
   }, [hasScrolledToSynthesis, isSynthesisActive]);
 
   const handleSSEMessage = useCallback((message: SSEMessage) => {
+    // Remove beforeunload warning when collaboration completes
+    if (message.type === SSEMessageType.COLLABORATION_COMPLETE) {
+      if (beforeUnloadHandlerRef.current) {
+        window.removeEventListener('beforeunload', beforeUnloadHandlerRef.current);
+        beforeUnloadHandlerRef.current = null;
+      }
+    }
+    
     if (message.type === SSEMessageType.TOKEN_CHUNK && isTokenChunk(message.payload)) {
       const chunk = message.payload;
       
@@ -176,13 +188,23 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
 
   const handleSubmit = async (): Promise<void> => {
     logger.info('Submit button clicked');
-    logger.debug('Selected models:', selectedModels);
-    logger.debug('Prompt input:', promptInput);
+    logger.debug('Selected models', { selectedModels });
+    logger.debug('Prompt input', { promptInput });
     
     if (!selectedModels || selectedModels.length < 2 || !promptInput.trim()) {
       logger.error('Validation failed - models or prompt missing');
       return;
     }
+
+    // Warn user about not refreshing during generation
+    beforeUnloadHandlerRef.current = (e: BeforeUnloadEvent): string => {
+      const message = 'AI models are still generating. Are you sure you want to leave?';
+      e.preventDefault();
+      e.returnValue = message;
+      return message;
+    };
+    
+    window.addEventListener('beforeunload', beforeUnloadHandlerRef.current);
 
     try {
       logger.debug('Clearing previous content');
@@ -224,14 +246,14 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
         body: JSON.stringify(requestBody),
       });
 
-      logger.debug('Response status:', response.status);
-      logger.debug('Response headers:', response.headers);
+      logger.debug('Response status', { status: response.status });
+      logger.debug('Response headers', { headers: Array.from(response.headers.entries()) });
 
       const data = await response.json();
-      logger.debug('Response data:', data);
+      logger.debug('Response data', { data });
       
       if (data.sessionId) {
-        logger.info('Connecting to SSE with sessionId:', data.sessionId);
+        logger.info('Connecting to SSE', { sessionId: data.sessionId });
         setSessionId(data.sessionId);
         sseService.connect(data.sessionId, handleSSEMessage);
       } else {
@@ -285,12 +307,20 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
         leftPanel={{
           title: models.find(m => m.id === selectedModels?.[0])?.name || selectedModels?.[0] || 'Model 1',
           content: <div ref={leftPanelRef} className="h-full" />,
-          onCopy: () => handleCopy(leftPanelRef, 'Gemma')
+          onCopy: () => handleCopy(leftPanelRef, 'Gemma'),
+          onFocus: () => {
+            leftStreamManager.checkScrollPosition();
+            logger.debug('Left panel focused - checking scroll position');
+          }
         }}
         rightPanel={{
           title: models.find(m => m.id === selectedModels?.[1])?.name || selectedModels?.[1] || 'Model 2',
           content: <div ref={rightPanelRef} className="h-full" />,
-          onCopy: () => handleCopy(rightPanelRef, 'Qwen')
+          onCopy: () => handleCopy(rightPanelRef, 'Qwen'),
+          onFocus: () => {
+            rightStreamManager.checkScrollPosition();
+            logger.debug('Right panel focused - checking scroll position');
+          }
         }}
       />
 

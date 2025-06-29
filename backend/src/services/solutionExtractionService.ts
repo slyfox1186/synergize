@@ -76,8 +76,8 @@ export class SolutionExtractionService {
       };
       
       // Add sum of digits if found
-      if (sumMatch?.[1]) {
-        solution.metadata!.sumOfDigits = parseInt(sumMatch[1]);
+      if (sumMatch?.[1] && solution.metadata) {
+        solution.metadata.sumOfDigits = parseInt(sumMatch[1]);
       }
       
       return solution;

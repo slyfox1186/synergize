@@ -246,7 +246,7 @@ export class RedisVectorStore {
               try {
                 metadata = typeof fieldValue === 'string' ? JSON.parse(fieldValue) : fieldValue;
               } catch (error) {
-                this.logger.warn('Failed to parse metadata:', error);
+                this.logger.warn('Failed to parse metadata:', { error });
                 metadata = {};
               }
             } else if (fieldName === 'vector_score' && typeof fieldValue === 'string') {

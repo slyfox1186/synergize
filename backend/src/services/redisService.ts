@@ -37,7 +37,11 @@ export class RedisService {
       });
 
       this.client.on('connect', () => {
-        this.logger.info('✅ Connected to Redis');
+        this.logger.info('✅ Connected to Redis', {
+          url: redisUrl,
+          retryStrategy: 'exponential',
+          maxRetriesPerRequest: 3
+        });
       });
 
       // Test connection
@@ -60,8 +64,19 @@ export class RedisService {
       throw new Error('Redis not connected');
     }
     
+    const startTime = Date.now();
     const key = `session:${sessionId}`;
+    const dataSize = JSON.stringify(data).length;
+    
     await this.client.setex(key, config.redis.ttl, JSON.stringify(data));
+    
+    this.logger.info('Session stored', {
+      sessionId,
+      key,
+      ttl: config.redis.ttl,
+      dataSizeBytes: dataSize,
+      operationTimeMs: Date.now() - startTime
+    });
   }
 
   async getSession(sessionId: string): Promise<unknown | null> {
@@ -69,8 +84,18 @@ export class RedisService {
       throw new Error('Redis not connected');
     }
     
+    const startTime = Date.now();
     const key = `session:${sessionId}`;
     const data = await this.client.get(key);
+    
+    this.logger.info('Session retrieved', {
+      sessionId,
+      key,
+      found: data !== null,
+      dataSizeBytes: data ? data.length : 0,
+      operationTimeMs: Date.now() - startTime
+    });
+    
     return data ? JSON.parse(data) : null;
   }
 
@@ -93,6 +118,7 @@ export class RedisService {
       throw new Error('Redis not connected');
     }
     
+    const startTime = Date.now();
     // Store vector with metadata for semantic search
     const data = {
       vector,
@@ -100,7 +126,15 @@ export class RedisService {
       timestamp: Date.now(),
     };
     
-    await this.client.hset('vectors', key, JSON.stringify(data));
+    const serialized = JSON.stringify(data);
+    await this.client.hset('vectors', key, serialized);
+    
+    this.logger.info('Vector stored', {
+      key,
+      vectorDimensions: vector.length,
+      dataSizeBytes: serialized.length,
+      operationTimeMs: Date.now() - startTime
+    });
   }
 
   async searchVectors(queryVector: number[], topK: number = 5): Promise<unknown[]> {
@@ -108,9 +142,11 @@ export class RedisService {
       throw new Error('Redis not connected');
     }
     
+    const startTime = Date.now();
     // Simple cosine similarity search
     // In production, use Redis Vector Search module
     const allVectors = await this.client.hgetall('vectors');
+    const vectorCount = Object.keys(allVectors).length;
     const results: Array<{ key: string; score: number; data: unknown }> = [];
     
     for (const [key, value] of Object.entries(allVectors)) {
@@ -120,10 +156,21 @@ export class RedisService {
     }
     
     // Sort by score and return top K
-    return results
+    const topResults = results
       .sort((a, b) => b.score - a.score)
       .slice(0, topK)
       .map(r => ({ ...(r.data as { metadata: Record<string, unknown> }).metadata, score: r.score }));
+    
+    this.logger.info('Vector search completed', {
+      queryVectorDimensions: queryVector.length,
+      totalVectors: vectorCount,
+      topK,
+      resultsReturned: topResults.length,
+      topScore: topResults[0]?.score || 0,
+      searchTimeMs: Date.now() - startTime
+    });
+    
+    return topResults;
   }
 
   private cosineSimilarity(a: number[], b: number[]): number {

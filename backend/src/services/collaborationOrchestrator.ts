@@ -161,18 +161,40 @@ export class CollaborationOrchestrator {
       if (this.cancelled) return;
       
       const currentPhase = phases[currentPhaseIndex];
-      this.logger.info(`🔍 PHASE LOOP: Executing phase ${currentPhaseIndex + 1}/${phases.length}: ${currentPhase}`);
+      this.logger.info(`🔍 PHASE LOOP: Executing phase ${currentPhaseIndex + 1}/${phases.length}: ${currentPhase}`, {
+        sessionId: this.conversationState?.sessionId,
+        phaseIndex: currentPhaseIndex,
+        phase: currentPhase,
+        totalTurns: this.conversationState?.turns.length || 0,
+        currentPhaseState: this.conversationState?.currentPhase
+      });
       
       // IMPORTANT: Ensure conversation state is set to the phase we're executing
       // This was the bug - we weren't updating the state before executing the phase
       if (this.conversationState && this.conversationState.currentPhase !== currentPhase) {
-        this.logger.info(`🔄 Updating conversation state to phase ${currentPhase}`);
+        const beforePhase = this.conversationState.currentPhase;
+        this.logger.info(`🔄 Phase transition needed`, {
+          sessionId: this.conversationState.sessionId,
+          fromPhase: beforePhase,
+          toPhase: currentPhase,
+          turnsBeforeTransition: this.conversationState.turns.length,
+          reason: 'phase_loop_progression'
+        });
+        
         await this.conversationManager.manualPhaseTransition(
           this.conversationState.sessionId,
           currentPhase
         );
+        
         // Refresh state after transition
         this.conversationState = await this.conversationManager.getConversationState(this.conversationState.sessionId);
+        
+        this.logger.info(`✅ Phase transition complete`, {
+          sessionId: this.conversationState?.sessionId,
+          beforePhase,
+          afterPhase: this.conversationState?.currentPhase,
+          turnsAfterTransition: this.conversationState?.turns.length || 0
+        });
       }
       
       await this.executeConversationalPhase(currentPhase);
@@ -199,17 +221,19 @@ export class CollaborationOrchestrator {
         // Get peak context usage
         const peakUsage = this.conversationState.peakContextUsage;
         
-        this.logger.info(`📈 Phase ${currentPhase} summary:`);
-        this.logger.info(`   Turns in phase: ${phaseTurns.length}`);
-        this.logger.info(`   Total turns: ${totalTurns}`);
-        if (lastTurnUsage > 0) {
-          this.logger.info(`   Last turn context usage: ${Math.round(lastTurnUsage)}% (Turn ${lastTurnNumber})`);
-        }
-        this.logger.info(`   Peak turn usage: ${Math.round(peakUsage.percentage)}% (Turn ${peakUsage.turnNumber})`);
-        
-        if (lastTurnUsage > 80) {
-          this.logger.warn(`⚠️ High turn context usage: ${Math.round(lastTurnUsage)}% (Turn ${lastTurnNumber})`);
-        }
+        this.logger.info(`📈 Phase ${currentPhase} summary`, {
+          sessionId: this.conversationState.sessionId,
+          phase: currentPhase,
+          phaseMetrics: {
+            turnsInPhase: phaseTurns.length,
+            totalTurns: totalTurns,
+            lastTurnContextUsage: lastTurnUsage > 0 ? Math.round(lastTurnUsage) : 0,
+            lastTurnNumber: lastTurnNumber,
+            peakContextUsage: Math.round(peakUsage.percentage),
+            peakTurnNumber: peakUsage.turnNumber
+          },
+          contextWarning: lastTurnUsage > 80 ? `High context usage: ${Math.round(lastTurnUsage)}%` : null
+        });
       }
       
       // Refresh state to check for any phase transitions
@@ -381,16 +405,38 @@ export class CollaborationOrchestrator {
     
     // Log the token allocation being used
     const allocation = conversationPrompt.metadata.tokenAllocation;
-    this.logger.info(`📋 Using token allocation from ConversationStateManager:`);
-    this.logger.info(`   Max generation: ${allocation.maxGenerationTokens} tokens`);
-    this.logger.info(`   History budget: ${allocation.historyTokenBudget} tokens`);
-    this.logger.info(`   Total allocated: ${allocation.totalAllocated} tokens`);
+    this.logger.info(`📋 Token allocation decision`, {
+      sessionId: this.conversationState.sessionId,
+      modelId,
+      phase,
+      allocation: {
+        maxGenerationTokens: allocation.maxGenerationTokens,
+        historyTokenBudget: allocation.historyTokenBudget,
+        totalAllocated: allocation.totalAllocated,
+        contextSize: config.model.contextSize,
+        utilizationPercent: Math.round((allocation.totalAllocated / config.model.contextSize) * 100)
+      },
+      reasoning: `Phase ${phase} requires ${allocation.maxGenerationTokens} tokens for detailed response`
+    });
 
     // Enhance prompt with curation if available
     let enhancedPrompt = conversationPrompt.currentTurn;
     if (curationResult && role === ModelRole.PARTICIPANT) {
       enhancedPrompt = `${conversationPrompt.currentTurn}\n\n## Enhanced Context from Curation:\n${curationResult.curationNotes}\n\n## Key Insights to Consider:\n${curationResult.extractedInsights.join('\n')}\n\nRespond with this enhanced understanding:`;
     }
+    
+    // Now calculate prompt tokens after we have the enhanced prompt
+    const promptTokenCount = this.tokenCounter.countTokens(enhancedPrompt);
+    
+    this.logger.info(`🎯 Starting model turn`, {
+      sessionId: this.conversationState.sessionId,
+      modelId,
+      role,
+      phase,
+      promptTokens: promptTokenCount,
+      responseToTurnId,
+      hasCurationEnhancement: curationResult !== undefined
+    });
 
     // Generate response using the model
     const context = await this.modelService.acquireContext(modelId);
@@ -405,16 +451,27 @@ export class CollaborationOrchestrator {
         conversationPrompt.metadata.tokenAllocation
       );
 
-      this.logger.info(`📝 Generated ${response.length} characters from ${modelId}`);
+      const duration = Date.now() - startTime;
+      const responseTokens = this.tokenCounter.countTokens(response);
       
-      // Check for incomplete generation (abrupt ending)
-      if (response.length < 50) {
-        this.logger.warn(`⚠️ Very short response from ${modelId}: "${response}"`);
-      }
-      
-      if (response.endsWith('...') || response.length === 0) {
-        this.logger.warn(`⚠️ Potentially incomplete response from ${modelId}`);
-      }
+      this.logger.info(`📝 Model turn completed`, {
+        sessionId: this.conversationState.sessionId,
+        modelId,
+        phase,
+        responseMetrics: {
+          responseLength: response.length,
+          responseTokens,
+          promptTokens: promptTokenCount,
+          totalTokens: promptTokenCount + responseTokens,
+          durationMs: duration,
+          tokensPerSecond: Math.round((responseTokens / duration) * 1000)
+        },
+        quality: {
+          isShort: response.length < 50,
+          isPotentiallyIncomplete: response.endsWith('...') || response.length === 0,
+          shortResponseContent: response.length < 50 ? response : undefined
+        }
+      });
 
       // Store the turn in conversation state
       const turn = await this.conversationManager.addTurn(
@@ -1018,6 +1075,7 @@ This is a critical correction - ensure accuracy!`;
     tokenAllocation?: TokenAllocation,
     skipNoThink?: boolean
   ): Promise<string> {
+    const startTime = Date.now();
     const modelConfig = this.modelService.getModelConfig(modelId);
     if (!modelConfig) throw new Error(`Model config not found for ${modelId}`);
 
@@ -1137,14 +1195,31 @@ This is a critical correction - ensure accuracy!`;
       const turnNumber = this.conversationState ? this.conversationState.turns.length + 1 : 1;
       const contextPercentage = Math.round(totalUsed/config.model.contextSize*100);
       
-      this.logger.info(`📊 Generation completed for ${modelId} (Turn ${turnNumber}):`);
-      this.logger.info(`   Prompt tokens: ${promptTokens}`);
-      this.logger.info(`   Generated tokens: ${actualGeneratedTokens}/${maxTokens} (${Math.round(actualGeneratedTokens/maxTokens*100)}% of limit)`);
-      this.logger.info(`   Turn ${turnNumber} context usage: ${totalUsed}/${config.model.contextSize} (${contextPercentage}%)`);
+      const generationTime = Date.now() - startTime;
+      const tokensPerSecond = Math.round((actualGeneratedTokens / generationTime) * 1000);
       
-      if (contextPercentage > 80) {
-        this.logger.warn(`⚠️ High turn context usage: ${contextPercentage}% (Turn ${turnNumber})`);
-      }
+      this.logger.info(`📊 Generation completed`, {
+        sessionId: this.conversationState?.sessionId,
+        modelId,
+        phase,
+        turnNumber,
+        generationMetrics: {
+          promptTokens,
+          generatedTokens: actualGeneratedTokens,
+          maxTokensAllowed: maxTokens,
+          tokenUtilization: Math.round(actualGeneratedTokens/maxTokens*100),
+          totalTokensUsed: totalUsed,
+          contextSize: config.model.contextSize,
+          contextUtilization: contextPercentage,
+          generationTimeMs: generationTime,
+          tokensPerSecond
+        },
+        warnings: contextPercentage > 80 ? [`High context usage: ${contextPercentage}%`] : [],
+        performance: {
+          tokenBuffer: tokenBuffer.getSize(),
+          memoryUsed: process.memoryUsage().heapUsed
+        }
+      });
 
       // Mark stream as complete
       this.streamingService.completeStream(modelId, phase);
