@@ -220,3 +220,16 @@
   background-color: rgba(0, 255, 255, 0.2);
   text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
 }
+
+/* Ensure last element has proper spacing */
+.markdown-content > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Ensure highlighted/marked text is fully visible */
+.markdown-content mark,
+.markdown-content .highlight {
+  display: inline-block;
+  padding: 0.1em 0.2em;
+  margin: 0.1em 0;
+}

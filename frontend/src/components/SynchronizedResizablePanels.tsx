@@ -81,9 +81,11 @@ export function SynchronizedResizablePanels({
         <div className="relative">
           <div 
             style={{ height: `${height}px` }}
-            className="overflow-y-auto p-4 bg-jarvis-darker rounded"
+            className="overflow-y-auto bg-jarvis-darker rounded"
           >
-            {leftPanel.content}
+            <div className="p-4 pb-8">
+              {leftPanel.content}
+            </div>
           </div>
           
           {/* Resize Handle */}
@@ -110,9 +112,11 @@ export function SynchronizedResizablePanels({
         <div className="relative">
           <div 
             style={{ height: `${height}px` }}
-            className="overflow-y-auto p-4 bg-jarvis-darker rounded"
+            className="overflow-y-auto bg-jarvis-darker rounded"
           >
-            {rightPanel.content}
+            <div className="p-4 pb-8">
+              {rightPanel.content}
+            </div>
           </div>
           
           {/* Resize Handle */}
