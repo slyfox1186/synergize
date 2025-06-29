@@ -1,17 +1,23 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import markdownit from 'markdown-it';
+import MarkdownIt from 'markdown-it';
 
-// markdown-it state types
-interface MarkdownItState {
+// Type definitions for markdown-it state objects
+interface StateInline {
   src: string;
   pos: number;
   posMax: number;
-  push: (type: string, tag: string, nesting: number) => { content: string };
+  push: (type: string, tag: string, nesting: 0 | 1 | -1) => { content: string };
+}
+
+interface StateBlock {
+  src: string;
   bMarks: number[];
   eMarks: number[];
   tShift: number[];
   line: number;
-  getLines: (start: number, end: number, indent: number, keepEmpty: boolean) => string;
+  lineMax: number;
+  push: (type: string, tag: string, nesting: 0 | 1 | -1) => { content: string };
+  getLines: (begin: number, end: number, indent: number, keepLastLF: boolean) => string;
 }
 
 declare global {
@@ -26,8 +32,8 @@ declare global {
 }
 
 // Custom rule to protect math delimiters from markdown processing
-function mathProtect(md: markdownit): void {
-  const mathInline = (state: MarkdownItState, silent: boolean): boolean => {
+function mathProtect(md: MarkdownIt): void {
+  const mathInline = (state: StateInline, silent: boolean): boolean => {
     const start = state.pos;
     const max = state.posMax;
     
@@ -56,7 +62,7 @@ function mathProtect(md: markdownit): void {
     return true;
   };
   
-  const mathBlock = (state: MarkdownItState, startLine: number, endLine: number, silent: boolean): boolean => {
+  const mathBlock = (state: StateBlock, startLine: number, endLine: number, silent: boolean): boolean => {
     const start = state.bMarks[startLine] + state.tShift[startLine];
     const max = state.eMarks[startLine];
     
@@ -97,7 +103,7 @@ function mathProtect(md: markdownit): void {
   md.block.ruler.before('fence', 'math_block', mathBlock);
 }
 
-const md = markdownit({
+const md = new MarkdownIt({
   html: true,
   linkify: true,
   typographer: false,
@@ -149,10 +155,12 @@ export const MathAwareRenderer: React.FC<MathAwareRendererProps> = ({
         const typesetMath = async (): Promise<void> => {
           try {
             // Wait for MathJax to be ready if needed
-            if (window.MathJax.startup?.promise) {
+            if (window.MathJax?.startup?.promise) {
               await window.MathJax.startup.promise;
             }
-            await window.MathJax.typesetPromise([containerRef.current]);
+            if (window.MathJax?.typesetPromise && containerRef.current) {
+              await window.MathJax.typesetPromise([containerRef.current]);
+            }
           } catch (e) {
             // Ignore errors during streaming
           }
