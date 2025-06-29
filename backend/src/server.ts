@@ -8,7 +8,7 @@ import express from 'express';
 import { SSEController } from './controllers/sseController.js';
 import { corsMiddleware } from './middleware/cors.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import { healthCheck } from './middleware/healthCheck.js';
+import { createHealthCheck } from './middleware/healthCheck.js';
 import { ModelService } from './services/modelService.js';
 import { RedisService } from './services/redisService.js';
 import { createLogger } from './utils/logger.js';
@@ -34,7 +34,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
-app.get('/health', healthCheck);
+app.get('/health', createHealthCheck(modelService));
 
 // API Routes
 app.post('/api/synergize/initiate', (req, res, next) => {

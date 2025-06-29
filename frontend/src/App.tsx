@@ -15,49 +15,96 @@ function App(): JSX.Element {
   const { isConnected, error, models } = useCollaborationStore();
 
   useEffect(() => {
-    logger.info('Starting model fetch...');
-    // Fetch available models on mount and auto-select them
-    fetch('/api/models')
-      .then(res => {
-        logger.debug('Models API response status', { status: res.status });
-        return res.json();
-      })
-      .then(data => {
-        logger.debug('Models API response data:', data);
-        const store = useCollaborationStore.getState();
+    logger.info('App initializing - disconnecting any existing SSE connections');
+    
+    // Ensure no stale SSE connections exist and reset store
+    sseService.disconnect();
+    useCollaborationStore.getState().reset();
+    
+    logger.info('Checking backend readiness...');
+    
+    // Function to check if backend is ready
+    const checkBackendHealth = async (): Promise<boolean> => {
+      try {
+        const response = await fetch('/health', { 
+          method: 'GET',
+          signal: AbortSignal.timeout(2000) // 2 second timeout
+        });
+        return response.ok;
+      } catch (error) {
+        // Backend not ready yet
+        return false;
+      }
+    };
+
+    // Function to wait for backend and then fetch models
+    const waitForBackendAndFetchModels = async (): Promise<void> => {
+      let attempts = 0;
+      const maxAttempts = 30; // 30 seconds max wait
+      
+      while (attempts < maxAttempts) {
+        const isReady = await checkBackendHealth();
         
-        if (data.models && Array.isArray(data.models)) {
-          logger.info('Setting models in store:', data.models);
-          store.setModels(data.models);
-          
-          // Auto-select models with Gemma on the left
-          if (data.models.length >= 2) {
-            // Find Gemma and Qwen models
-            const gemmaModel = data.models.find((m: ModelConfig) => m.id.includes('gemma'));
-            const qwenModel = data.models.find((m: ModelConfig) => m.id.includes('qwen'));
+        if (isReady) {
+          logger.info('Backend ready! Fetching models...');
+          // Backend is ready, now fetch models
+          try {
+            const res = await fetch('/api/models');
+            logger.debug('Models API response status', { status: res.status });
+            const data = await res.json();
+            logger.debug('Models API response data:', data);
             
-            let selectedIds: [string, string];
-            if (gemmaModel && qwenModel) {
-              // Gemma left, Qwen right
-              selectedIds = [gemmaModel.id, qwenModel.id];
+            const store = useCollaborationStore.getState();
+            
+            if (data.models && Array.isArray(data.models)) {
+              logger.info('Setting models in store:', data.models);
+              store.setModels(data.models);
+              
+              // Auto-select models with Gemma on the left
+              if (data.models.length >= 2) {
+                // Find Gemma and Qwen models
+                const gemmaModel = data.models.find((m: ModelConfig) => m.id.includes('gemma'));
+                const qwenModel = data.models.find((m: ModelConfig) => m.id.includes('qwen'));
+                
+                let selectedIds: [string, string];
+                if (gemmaModel && qwenModel) {
+                  // Gemma left, Qwen right
+                  selectedIds = [gemmaModel.id, qwenModel.id];
+                } else {
+                  // Fallback to first two models
+                  selectedIds = [data.models[0].id, data.models[1].id];
+                }
+                
+                logger.info('Auto-selecting models', { selectedIds });
+                store.selectModels(selectedIds);
+              } else {
+                logger.error('Not enough models found', undefined, { modelCount: data.models.length });
+              }
             } else {
-              // Fallback to first two models
-              selectedIds = [data.models[0].id, data.models[1].id];
+              logger.error('Invalid models data', undefined, { data });
             }
-            
-            logger.info('Auto-selecting models', { selectedIds });
-            store.selectModels(selectedIds);
-          } else {
-            logger.error('Not enough models found', undefined, { modelCount: data.models.length });
+          } catch (err) {
+            logger.error('Failed to fetch models:', err);
+            useCollaborationStore.getState().setError('Failed to connect to server');
           }
-        } else {
-          logger.error('Invalid models data', undefined, { data });
+          return; // Exit the function once we've successfully connected
         }
-      })
-      .catch((err: Error) => {
-        logger.error('Failed to fetch models:', err);
-        useCollaborationStore.getState().setError('Failed to connect to server');
-      });
+        
+        // Backend not ready, wait 1 second and try again
+        attempts++;
+        logger.debug(`Backend not ready, attempt ${attempts}/${maxAttempts}`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      // If we get here, backend didn't become ready within timeout
+      logger.error('Backend failed to become ready within timeout');
+      useCollaborationStore.getState().setError('Server is taking too long to start. Please refresh the page.');
+    };
+
+    // Start the health check process
+    waitForBackendAndFetchModels().catch(err => {
+      logger.error('Health check process failed:', err);
+    });
 
     return (): void => {
       sseService.disconnect();

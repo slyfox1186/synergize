@@ -32,6 +32,8 @@ export class StreamManager {
   private isFirstContent: boolean = true;
   private lastScrollCheck: number = 0;
   private userHasScrolled: boolean = false;
+  private ignoreNextScrollEvent: boolean = false;
+  private isResizing: boolean = false;
 
   constructor(containerRef: React.RefObject<HTMLDivElement | null>) {
     this.containerRef = containerRef;
@@ -71,6 +73,17 @@ export class StreamManager {
     this.scrollListener = (): void => {
       if (!this.scrollableParent) return;
       
+      // Ignore scroll events that happen immediately after DOM changes
+      if (this.ignoreNextScrollEvent) {
+        this.ignoreNextScrollEvent = false;
+        return;
+      }
+      
+      // Ignore scroll events during resize operations
+      if (this.isResizing) {
+        return;
+      }
+      
       const now = Date.now();
       // Throttle scroll checks to every 100ms
       if (now - this.lastScrollCheck < 100) return;
@@ -80,8 +93,10 @@ export class StreamManager {
       const distanceFromBottom = scrollHeight - clientHeight - scrollTop;
       const isAtBottom = distanceFromBottom < 50; // 50px tolerance for better UX
       
-      // Mark that user has interacted with scroll
-      this.userHasScrolled = true;
+      // Only mark user interaction if they scroll significantly away from bottom
+      if (distanceFromBottom > 100) {
+        this.userHasScrolled = true;
+      }
       
       // Re-enable autoscroll if user scrolls near bottom
       if (isAtBottom && !this.scrollingEnabled) {
@@ -89,8 +104,8 @@ export class StreamManager {
         this.userHasScrolled = false; // Reset user interaction flag
         logger.debug('Auto-scroll re-enabled', { distanceFromBottom });
       }
-      // Disable autoscroll if user scrolls away from bottom
-      else if (!isAtBottom && this.scrollingEnabled && distanceFromBottom > 100) {
+      // Disable autoscroll only if user scrolls significantly away from bottom
+      else if (distanceFromBottom > 75 && this.scrollingEnabled) {
         this.scrollingEnabled = false;
         logger.debug('Auto-scroll disabled', { distanceFromBottom });
       }
@@ -186,6 +201,9 @@ export class StreamManager {
       content.className = 'phase-content text-jarvis-text markdown-content prose prose-invert max-w-none';
       phaseDiv.appendChild(content);
 
+      // Flag to ignore scroll events triggered by DOM changes
+      this.ignoreNextScrollEvent = true;
+      
       container.appendChild(phaseDiv);
       this.phaseContainers.set(key, content);
       
@@ -210,10 +228,15 @@ export class StreamManager {
     this.scrollingEnabled = true;
     this.isFirstContent = true;
     this.userHasScrolled = false;
+    this.ignoreNextScrollEvent = false;
   }
 
   setScrollingEnabled(enabled: boolean): void {
     this.scrollingEnabled = enabled;
+  }
+
+  setResizing(resizing: boolean): void {
+    this.isResizing = resizing;
   }
 
   isScrollingEnabled(): boolean {
@@ -223,11 +246,13 @@ export class StreamManager {
   private performAutoScroll(): void {
     if (!this.scrollingEnabled || !this.scrollableParent) return;
     
-    // Don't auto-scroll if user has recently interacted
+    // Don't auto-scroll if user has recently interacted and isn't near bottom
     if (this.userHasScrolled) {
       const { scrollTop, scrollHeight, clientHeight } = this.scrollableParent;
-      const isNearBottom = scrollHeight - clientHeight - scrollTop < 100;
+      const isNearBottom = scrollHeight - clientHeight - scrollTop < 50;
       if (!isNearBottom) return;
+      // User is near bottom, so allow auto-scroll and reset interaction flag
+      this.userHasScrolled = false;
     }
     
     // Use instant scrolling for first content, smooth for subsequent
@@ -242,8 +267,6 @@ export class StreamManager {
           top: scrollHeight,
           behavior: behavior as ScrollBehavior
         });
-        // Reset user interaction flag after auto-scroll
-        this.userHasScrolled = false;
       }
     });
   }
@@ -288,7 +311,7 @@ export class StreamManager {
   }
 }
 
-export function useStreamManager({ containerRef, onPhaseChange }: StreamManagerOptions): { appendTokens: (chunk: TokenChunk) => void; clear: () => void; setScrollingEnabled: (enabled: boolean) => void; checkScrollPosition: () => void } {
+export function useStreamManager({ containerRef, onPhaseChange }: StreamManagerOptions): { appendTokens: (chunk: TokenChunk) => void; clear: () => void; setScrollingEnabled: (enabled: boolean) => void; checkScrollPosition: () => void; setResizing: (resizing: boolean) => void } {
   const managerRef = useRef<StreamManager | null>(null);
 
   useEffect(() => {
@@ -331,5 +354,11 @@ export function useStreamManager({ containerRef, onPhaseChange }: StreamManagerO
     }
   }, []);
 
-  return { appendTokens, clear, setScrollingEnabled, checkScrollPosition };
+  const setResizing = useCallback((resizing: boolean) => {
+    if (managerRef.current) {
+      managerRef.current.setResizing(resizing);
+    }
+  }, []);
+
+  return { appendTokens, clear, setScrollingEnabled, checkScrollPosition, setResizing };
 }

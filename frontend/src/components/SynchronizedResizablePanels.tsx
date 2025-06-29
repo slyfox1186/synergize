@@ -6,12 +6,16 @@ interface SynchronizedResizablePanelsProps {
     content: ReactNode;
     onCopy: () => void;
     onFocus?: () => void;
+    onResizeStart?: () => void;
+    onResizeEnd?: () => void;
   };
   rightPanel: {
     title: string;
     content: ReactNode;
     onCopy: () => void;
     onFocus?: () => void;
+    onResizeStart?: () => void;
+    onResizeEnd?: () => void;
   };
   minHeight?: number;
   maxHeight?: number;
@@ -36,6 +40,10 @@ export function SynchronizedResizablePanels({
     startYRef.current = e.clientY;
     startHeightRef.current = height;
 
+    // Notify stream managers that resize is starting
+    leftPanel.onResizeStart?.();
+    rightPanel.onResizeStart?.();
+
     // Add event listeners to document for smooth dragging
     const handleMouseMove = (e: MouseEvent): void => {
       const deltaY = e.clientY - startYRef.current;
@@ -47,11 +55,15 @@ export function SynchronizedResizablePanels({
       setIsResizing(false);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      
+      // Notify stream managers that resize has ended
+      leftPanel.onResizeEnd?.();
+      rightPanel.onResizeEnd?.();
     };
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [height, minHeight, maxHeight]);
+  }, [height, minHeight, maxHeight, leftPanel, rightPanel]);
 
   const resizeHandleClass = `
     absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize
