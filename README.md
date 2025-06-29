@@ -11,6 +11,7 @@ A multi-model AI collaboration system where Large Language Models work together 
 
 ![Screenshot 01](https://i.imgur.com/frv9Fl9.png)
 ![Screenshot 02](https://i.imgur.com/zgKebBj.png)
+![Screenshot 03](https://i.imgur.com/Yg2xHj0.png)
 
 ## 🌟 Key Features
 
