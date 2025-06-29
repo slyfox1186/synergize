@@ -171,23 +171,49 @@ ${conversationContext.substring(0, 800)}${conversationContext.length > 800 ? '..
 - SYNTHESIZE: Combine best elements into unified solution
 - CONSENSUS: Finalize collaborative conclusion
 
-**PHASE TRANSITION RULES:**
-1. **FORCE CRITIQUE PHASE** if:
-   - Mathematical errors detected (e.g., incorrect calculations, wrong formulas)
-   - Logical inconsistencies found
-   - Unverified claims present
-   - Problem solving approach is flawed
+**ULTRA-INTELLIGENT PHASE TRANSITION FREEDOM:**
+You have COMPLETE AUTONOMY to jump to ANY phase that best serves the problem-solving process!
 
-2. **CONTINUE CURRENT PHASE** if:
-   - Minor issues that need more exploration
-   - Response lacks sufficient depth
-   - More discussion needed in current phase
+**PHASE JUMP SCENARIOS:**
 
-3. **TRANSITION TO NEXT PHASE** only if:
-   - All mathematical/logical claims are VERIFIED as correct
-   - No errors detected
-   - Phase objectives fully met with accuracy
-   - Ready for next stage of collaboration
+1. **INSTANT CONSENSUS** (BRAINSTORM → CONSENSUS):
+   - Both models immediately arrive at the same VERIFIED answer
+   - 100% confidence with mathematical proof
+   - No need for further discussion - jump straight to final answer!
+
+2. **SKIP TO SYNTHESIS** (Any Phase → SYNTHESIZE):
+   - Multiple valid approaches discovered
+   - Ready to combine best elements
+   - No errors found, just need integration
+
+3. **EMERGENCY CRITIQUE** (Any Phase → CRITIQUE):
+   - Critical error detected at ANY point
+   - Mathematical incorrectness found
+   - Logical fallacy discovered
+
+4. **STRATEGIC BACKTRACK** (Any Phase → BRAINSTORM):
+   - Realize we're solving the wrong problem
+   - Need completely fresh approach
+   - Current path is a dead end
+
+5. **RAPID REVISION** (CRITIQUE → REVISE):
+   - Errors identified and solutions clear
+   - Skip additional critique rounds
+
+6. **CONFIDENCE SKIP** (REVISE → CONSENSUS):
+   - Revision perfectly addresses all issues
+   - Both models now agree completely
+   - Skip synthesis, go to final answer
+
+**DECISION FACTORS:**
+- **Problem Complexity**: Simple problems can skip phases
+- **Model Agreement**: High agreement enables phase jumping
+- **Confidence Level**: 100% verified confidence allows shortcuts
+- **Error Severity**: Critical errors force immediate CRITIQUE
+- **Time Efficiency**: Jump phases when it saves unnecessary work
+
+**YOUR MISSION**: Choose the OPTIMAL phase for maximum efficiency and accuracy!
+Don't follow a rigid sequence - be INTELLIGENT and ADAPTIVE!
 
 **CRITICAL ISSUES TO FLAG:**
 - Incorrect mathematical calculations
@@ -227,18 +253,24 @@ Respond ONLY in the above format. Be thorough in error detection - it's better t
     // Generate response
     const { LlamaChatSession } = await import('node-llama-cpp');
     const sequence = context.getSequence();
-    const session = new LlamaChatSession({
-      contextSequence: sequence,
-      systemPrompt: ''
-    });
+    
+    try {
+      const session = new LlamaChatSession({
+        contextSequence: sequence,
+        systemPrompt: ''
+      });
 
-    const response = await session.prompt(formatted.prompt, {
-      temperature: 0.3, // Lower temperature for more consistent analysis
-      maxTokens: 800,
-      customStopTriggers: formatted.stopTokens
-    });
+      const response = await session.prompt(formatted.prompt, {
+        temperature: 0.3, // Lower temperature for more consistent analysis
+        maxTokens: 800,
+        customStopTriggers: formatted.stopTokens
+      });
 
-    return this.parsePhaseDecisionResponse(response);
+      return this.parsePhaseDecisionResponse(response);
+    } finally {
+      // CRITICAL: Always dispose of the sequence to prevent "No sequences left" error
+      sequence.dispose();
+    }
   }
 
   /**

@@ -2,6 +2,13 @@
 
 echo "🚀 Starting Synergize..."
 
+# Check for --prod flag
+PROD_MODE=false
+if [[ "$1" == "--prod" ]]; then
+    PROD_MODE=true
+    echo "🏭 Production mode requested"
+fi
+
 # Check and kill any processes using required ports
 echo "🔍 Checking for port conflicts..."
 
@@ -68,8 +75,15 @@ fi
 echo "🧹 Cleaning old build artifacts..."
 rm -rf dist frontend/dist backend/dist
 
-# Build in production mode
-if [ "$NODE_ENV" = "production" ]; then
+# Handle --prod flag
+if [ "$PROD_MODE" = true ]; then
+    echo "🔨 Building optimized production bundle..."
+    npm run build
+    
+    echo "🌟 Starting production server on port ${PORT:-8000}..."
+    npm run start
+# Build in production mode based on NODE_ENV
+elif [ "$NODE_ENV" = "production" ]; then
     echo "🔨 Building for production..."
     npm run build
     

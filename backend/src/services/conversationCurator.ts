@@ -389,24 +389,39 @@ ${conversationContext.substring(0, 800)}...
 - SYNTHESIZE: Combine best elements into unified solution
 - CONSENSUS: Finalize collaborative conclusion
 
-**Decision Task:**
-Analyze the partner's response for CORRECTNESS and quality:
+**ULTRA-INTELLIGENT PHASE JUMPING - You can jump to ANY phase!**
 
-1. **CONTINUE CURRENT PHASE** if:
-   - Mathematical/logical ERRORS need to be fixed
-   - Verification steps are incomplete
-   - The response lacks depth or misses key points
-   - More exploration/discussion is needed
+**DECISION SCENARIOS:**
 
-2. **FORCE CRITIQUE PHASE** if:
-   - You detected mathematical errors (e.g., angles don't sum correctly)
-   - Logic is flawed or contradictory
-   - The problem is unsolvable as stated
+1. **INSTANT CONSENSUS** (Jump directly to CONSENSUS from ANY phase):
+   - Both models have the SAME verified answer
+   - 100% confidence with mathematical proof
+   - No errors found, no further discussion needed
+   - Example: "We both calculated 42. Jump to CONSENSUS!"
 
-3. **TRANSITION TO NEXT PHASE** only if:
-   - Current work is VERIFIED as correct
-   - All mathematical relationships check out
-   - The phase objectives are met WITH ACCURACY
+2. **SKIP INTERMEDIATE PHASES** when efficient:
+   - BRAINSTORM → SYNTHESIZE (if multiple good ideas, no errors)
+   - BRAINSTORM → CONSENSUS (if immediate agreement)
+   - CRITIQUE → CONSENSUS (if error fixed perfectly)
+   - Any phase → Any phase that makes sense!
+
+3. **STRATEGIC BACKTRACK** when needed:
+   - SYNTHESIZE → BRAINSTORM (realized wrong problem)
+   - CONSENSUS → CRITIQUE (last-minute error found)
+   - Any phase → Earlier phase if needed
+
+4. **CONTINUE CURRENT PHASE** only if:
+   - More work genuinely needed in this phase
+   - Haven't reached clarity yet
+   - Models still diverging
+
+5. **FORCE CRITIQUE** for errors:
+   - Mathematical mistakes found
+   - Logical contradictions detected
+   - Verification failed
+
+**YOUR MISSION:** Choose the MOST EFFICIENT path to reach accurate consensus!
+Don't follow rigid sequences - be ADAPTIVE and INTELLIGENT!
 
 **Required Response Format:**
 DECISION: [CONTINUE|TRANSITION]

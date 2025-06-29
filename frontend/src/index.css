@@ -10,51 +10,228 @@
   }
   
   body {
-    @apply bg-synergy-darker text-synergy-text font-mono;
+    @apply text-synergy-text font-mono;
+    /* PREMIUM ELECTRIC BLUE & ORANGE DARK THEME */
+    background: #121212; /* Rich charcoal base */
+    position: relative;
+    overflow-x: hidden;
+    min-height: 100vh;
   }
   
+  /* SOPHISTICATED DEPTH LAYER SYSTEM */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -3;
+    
+    /* Multi-directional gradient for depth and sophistication */
+    background: 
+      /* Electric blue glow from top corners */
+      radial-gradient(ellipse 800px 600px at 0% 0%, rgba(30, 144, 255, 0.08) 0%, transparent 40%),
+      radial-gradient(ellipse 800px 600px at 100% 0%, rgba(30, 144, 255, 0.06) 0%, transparent 40%),
+      /* Amber warmth from bottom */
+      radial-gradient(ellipse 1000px 400px at 50% 100%, rgba(255, 140, 0, 0.04) 0%, transparent 50%),
+      /* Deep gradient base */
+      linear-gradient(180deg, 
+        #121212 0%,
+        #141414 25%,
+        #161616 50%,
+        #181818 75%,
+        #1A1A1A 100%
+      );
+  }
+  
+  /* DYNAMIC MESH OVERLAY FOR FUTURISTIC FEEL */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    right: -50%;
+    bottom: -50%;
+    width: 200%;
+    height: 200%;
+    z-index: -2;
+    pointer-events: none;
+    
+    /* Cyberpunk-inspired mesh gradient */
+    background: 
+      conic-gradient(from 0deg at 50% 50%,
+        rgba(30, 144, 255, 0.02) 0deg,
+        transparent 60deg,
+        rgba(255, 140, 0, 0.02) 120deg,
+        transparent 180deg,
+        rgba(76, 217, 100, 0.01) 240deg,
+        transparent 300deg,
+        rgba(30, 144, 255, 0.02) 360deg
+      );
+    
+    /* Slow rotation for dynamic effect */
+    animation: mesh-rotate 120s linear infinite;
+    opacity: 0.6;
+  }
+  
+  /* SUBTLE GRID PATTERN FOR TEXTURE */
+  #root::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    pointer-events: none;
+    
+    /* Premium tech grid */
+    background-image: 
+      linear-gradient(rgba(30, 144, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(30, 144, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: -1px -1px;
+    
+    /* Subtle animation for life */
+    animation: grid-flow 20s linear infinite;
+  }
+  
+  /* PREMIUM ANIMATIONS */
+  @keyframes mesh-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  @keyframes grid-flow {
+    0% {
+      transform: translate(0, 0);
+    }
+    100% {
+      transform: translate(40px, 40px);
+    }
+  }
+  
+  /* ELEVATED SCROLLBAR DESIGN */
   ::-webkit-scrollbar {
     @apply w-2;
   }
   
   ::-webkit-scrollbar-track {
-    @apply bg-synergy-dark;
+    background: rgba(26, 26, 26, 0.8);
+    border: 1px solid rgba(30, 144, 255, 0.1);
   }
   
   ::-webkit-scrollbar-thumb {
-    @apply bg-synergy-muted hover:bg-synergy-primary rounded-full;
+    background: linear-gradient(
+      to bottom, 
+      rgba(30, 144, 255, 0.4), 
+      rgba(255, 140, 0, 0.4)
+    );
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      to bottom, 
+      rgba(30, 144, 255, 0.6), 
+      rgba(255, 140, 0, 0.6)
+    );
+    box-shadow: 
+      0 0 10px rgba(30, 144, 255, 0.4),
+      0 0 20px rgba(255, 140, 0, 0.2);
   }
 }
 
 @layer components {
   .synergy-glow {
-    @apply shadow-[0_0_20px_rgba(0,212,255,0.5)];
+    box-shadow: 
+      0 0 20px rgba(30, 144, 255, 0.4),
+      0 0 40px rgba(30, 144, 255, 0.2),
+      inset 0 0 20px rgba(30, 144, 255, 0.05);
+  }
+  
+  .synergy-glow-orange {
+    box-shadow: 
+      0 0 20px rgba(255, 140, 0, 0.4),
+      0 0 40px rgba(255, 140, 0, 0.2),
+      inset 0 0 20px rgba(255, 140, 0, 0.05);
   }
   
   .synergy-border {
-    @apply border border-synergy-primary/30 hover:border-synergy-primary/60 transition-colors;
+    @apply border border-synergy-primary/20 hover:border-synergy-primary/50;
+    transition: all 0.3s ease;
+  }
+  
+  .synergy-border:hover {
+    box-shadow: 
+      0 0 10px rgba(30, 144, 255, 0.2),
+      inset 0 0 10px rgba(30, 144, 255, 0.05);
   }
   
   .synergy-button {
-    @apply px-6 py-3 bg-synergy-dark synergy-border text-synergy-primary 
-           hover:bg-synergy-primary/10 transition-all duration-300
-           font-tech uppercase tracking-wider;
+    @apply px-6 py-3 bg-synergy-dark text-synergy-text font-tech uppercase tracking-wider rounded;
+    background: linear-gradient(135deg, rgba(30, 144, 255, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%);
+    border: 1px solid rgba(30, 144, 255, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .synergy-button:hover {
+    background: linear-gradient(135deg, rgba(30, 144, 255, 0.2) 0%, rgba(255, 140, 0, 0.2) 100%);
+    border-color: rgba(30, 144, 255, 0.6);
+    box-shadow: 
+      0 0 20px rgba(30, 144, 255, 0.3),
+      0 0 40px rgba(255, 140, 0, 0.1);
+    transform: translateY(-2px);
   }
   
   .synergy-input {
-    @apply w-full px-4 py-3 bg-synergy-dark synergy-border 
-           text-synergy-text placeholder-synergy-muted
-           focus:outline-none focus:synergy-glow transition-all;
+    @apply w-full px-4 py-3 text-synergy-text placeholder-synergy-muted rounded;
+    background: rgba(26, 26, 26, 0.8);
+    border: 1px solid rgba(30, 144, 255, 0.2);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+  }
+  
+  .synergy-input:focus {
+    outline: none;
+    border-color: rgba(30, 144, 255, 0.6);
+    background: rgba(26, 26, 26, 0.95);
+    box-shadow: 
+      0 0 20px rgba(30, 144, 255, 0.3),
+      inset 0 0 10px rgba(30, 144, 255, 0.05);
   }
   
   .phase-header {
-    @apply text-synergy-accent font-tech text-sm mb-2 uppercase tracking-wider
-           border-b border-synergy-accent/20 pb-2;
+    @apply font-tech text-sm mb-2 uppercase tracking-wider pb-2;
+    color: #1E90FF;
+    border-bottom: 1px solid rgba(30, 144, 255, 0.3);
+    text-shadow: 0 0 10px rgba(30, 144, 255, 0.5);
   }
   
   .model-panel {
-    @apply bg-synergy-dark/50 backdrop-blur-sm synergy-border rounded-lg p-6
-           hover:bg-synergy-dark/70 transition-all;
+    @apply rounded-lg p-6 transition-all;
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(18, 18, 18, 0.9) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(30, 144, 255, 0.15);
+    box-shadow: 
+      0 4px 20px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  
+  .model-panel:hover {
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(18, 18, 18, 0.95) 100%);
+    border-color: rgba(30, 144, 255, 0.3);
+    box-shadow: 
+      0 8px 30px rgba(0, 0, 0, 0.4),
+      0 0 20px rgba(30, 144, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
   }
 }
 
@@ -204,21 +381,19 @@
   .rainbow-text {
     font-weight: 900;
     font-size: 2.5rem;
+    letter-spacing: 0.05em;
     
-    /* Single powerful conic gradient for smooth transitions */
-    background: conic-gradient(
-      from 180deg at 50% 50%,
-      #8B4444,     /* Muted crimson */
-      #8B5A2B,     /* Saddle brown */
-      #9B870C,     /* Dark goldenrod */
-      #7B7D3C,     /* Olive sage */
-      #4B6B4B,     /* Dark sage green */
-      #4B6B6B,     /* Teal grey */
-      #4B4B8B,     /* Slate blue */
-      #5B4B6B,     /* Deep indigo */
-      #6B4B6B,     /* Muted purple */
-      #7B5454,     /* Dusty rose */
-      #8B4444      /* Loop back to crimson */
+    /* Electric Blue & Orange themed gradient for SYNERGIZE */
+    background: linear-gradient(
+      90deg,
+      #1E90FF 0%,      /* Electric Blue */
+      #4DA6FF 15%,     /* Lighter Blue */
+      #1E90FF 30%,     /* Electric Blue */
+      #FF8C00 45%,     /* Vivid Amber */
+      #FFA533 60%,     /* Lighter Amber */
+      #FF8C00 75%,     /* Vivid Amber */
+      #1E90FF 90%,     /* Electric Blue */
+      #1E90FF 100%     /* Electric Blue */
     );
     
     /* Static properties for text gradient effect */
@@ -227,20 +402,38 @@
     -webkit-text-fill-color: transparent;
     
     /* Initial state for animated properties */
-    background-size: 400% 400%;
-    background-position: -200% 50%;
-    opacity: 0.85;
+    background-size: 300% 100%;
+    background-position: 0% 50%;
     
-    /* Apply the powerful animation with linear timing for precise control */
-    /* Total duration is 18s: 12s for animation (70%) + 6s for pause (30%) */
-    animation: powerful-rainbow-wave 18s linear infinite;
+    /* Apply the smooth animation */
+    animation: electric-wave 8s ease-in-out infinite;
     
-    /* Enable smooth transform and shadow transitions */
-    transform-style: preserve-3d;
-    perspective: 1000px;
+    /* Premium glow effect */
+    filter: 
+      drop-shadow(0 0 20px rgba(30, 144, 255, 0.5))
+      drop-shadow(0 0 40px rgba(255, 140, 0, 0.3));
     
-    /* Base shadow state */
-    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.05));
+    /* Enable smooth transitions */
+    transition: all 0.3s ease;
+  }
+  
+  .rainbow-text:hover {
+    /* Enhanced glow on hover */
+    filter: 
+      drop-shadow(0 0 30px rgba(30, 144, 255, 0.7))
+      drop-shadow(0 0 50px rgba(255, 140, 0, 0.5))
+      drop-shadow(0 0 80px rgba(30, 144, 255, 0.3));
+    transform: scale(1.05);
+  }
+  
+  /* New animation for Electric Blue & Orange theme */
+  @keyframes electric-wave {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
   }
   
   /* Pulsing text animation for critical information */

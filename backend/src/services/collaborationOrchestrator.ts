@@ -261,6 +261,15 @@ export class CollaborationOrchestrator {
         // Phase was changed during execution, update index
         const newIndex = phases.indexOf(this.conversationState.currentPhase);
         this.logger.info(`🔍 PHASE LOOP: Phase changed during execution from ${currentPhase} to ${this.conversationState.currentPhase} (index ${newIndex})`);
+        
+        // ULTRA-INTELLIGENT: Check if LLMs jumped directly to CONSENSUS
+        if (this.conversationState.currentPhase === CollaborationPhase.CONSENSUS) {
+          this.logger.info(`🚀 ULTRA-INTELLIGENT JUMP: LLMs reached CONSENSUS early! Skipping intermediate phases.`);
+          // Execute CONSENSUS phase to finalize
+          await this.executeConversationalPhase(CollaborationPhase.CONSENSUS);
+          break; // Exit loop and go to synthesis
+        }
+        
         if (newIndex >= 0 && newIndex !== currentPhaseIndex) {
           // Allow LLMs to jump to ANY valid phase (forward OR backward)
           const direction = newIndex > currentPhaseIndex ? 'forward' : 'backward';
@@ -270,11 +279,17 @@ export class CollaborationOrchestrator {
         }
       }
       
+      // ULTRA-INTELLIGENT: Also check if we're already at CONSENSUS
+      if (currentPhase === CollaborationPhase.CONSENSUS) {
+        this.logger.info(`🏁 CONSENSUS reached - ready for final synthesis!`);
+        break; // Exit loop and generate synthesis
+      }
+      
       this.logger.info(`✅ PHASE LOOP: Completed phase ${currentPhase}, moving to next (index ${currentPhaseIndex + 1})`);
       currentPhaseIndex++;
     }
     
-    this.logger.info(`🏁 PHASE LOOP: All phases completed, generating final synthesis`);
+    this.logger.info(`🏁 PHASE LOOP: Collaboration complete, generating final synthesis`);
     
     // Final refresh of conversation state before synthesis
     if (this.conversationState) {
@@ -354,6 +369,14 @@ export class CollaborationOrchestrator {
         this.logger.info(`🏁 In CONSENSUS phase - ready for synthesis`);
         return;
       }
+      
+      // Log phase decision context for ULTRA-INTELLIGENT jumping
+      this.logger.info(`🧠 ULTRA-INTELLIGENT PHASE DECISION POINT`, {
+        currentPhase: phase,
+        availablePhases: Object.values(CollaborationPhase),
+        canJumpTo: 'ANY phase including CONSENSUS if models agree 100%',
+        turnsSoFar: this.conversationState.turns.length
+      });
 
       // Use dedicated DevilsAdvocateService for critical analysis and phase decisions
       this.logger.info(`👹 Performing devil's advocate analysis for ${phase}`);
@@ -751,6 +774,14 @@ This is a critical correction - ensure accuracy!`;
       // If errors were detected, handle them
       if (verificationResult.hasErrors) {
         this.logger.warn('❌ Qwen3 verification detected errors - initiating error correction flow');
+        
+        // Check if we've already exceeded max attempts
+        if (this.verificationAttempts >= this.MAX_VERIFICATION_ATTEMPTS) {
+          this.logger.warn('⚠️ Already at max verification attempts, generating synthesis with errors');
+          await this.generateSynthesisWithErrors(verificationResult.errorDetails || 'Unspecified errors detected');
+          return;
+        }
+        
         await this.handleVerificationErrors(verificationResult.errorDetails || 'Unspecified errors detected');
         return; // Don't proceed with synthesis
       }
@@ -779,11 +810,203 @@ This is a critical correction - ensure accuracy!`;
         return;
       }
 
-      // Use Gemma to create the final synthesis
-      const { synthesis: synthesisInstruction, analysis } = await this.conversationManager.generateSynthesis(
-        this.conversationState.sessionId,
-        this.GEMMA_MODEL_ID
-      );
+      // Use Gemma to create the final synthesis with timeout protection
+      let synthesisInstruction: string;
+      let analysis: AgreementAnalysis;
+      
+      try {
+        // Add timeout protection to prevent hanging on context extraction
+        const synthesisPromise = this.conversationManager.generateSynthesis(
+          this.conversationState.sessionId,
+          this.GEMMA_MODEL_ID
+        );
+        
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Synthesis generation timeout')), 15000); // 15 second timeout
+        });
+        
+        const result = await Promise.race([synthesisPromise, timeoutPromise]);
+        synthesisInstruction = result.synthesis;
+        analysis = result.analysis;
+        
+      } catch (timeoutError) {
+        this.logger.warn('⚠️ Synthesis generation timed out, creating intelligent fallback');
+        
+        // ULTRA-INTELLIGENT FALLBACK: Analyze the actual conversation content
+        const gemmaFinalTurns = this.conversationState.turns
+          .filter(t => t.modelId === this.GEMMA_MODEL_ID)
+          .slice(-3); // Last 3 Gemma turns
+        
+        const qwenFinalTurns = this.conversationState.turns
+          .filter(t => t.modelId === this.QWEN_MODEL_ID)
+          .slice(-3); // Last 3 Qwen turns
+        
+        // Extract actual answers from the conversation
+        const answerPattern = /answer\s*(?:is|=|:)\s*([0-9.,\s\w]+)|result\s*(?:is|=|:)\s*([0-9.,\s\w]+)|therefore\s*(?:.*?)\s*([0-9.,\s\w]+)|final\s*(?:answer|value|result)\s*(?:is|=|:)?\s*([0-9.,\s\w]+)/gi;
+        const methodPattern = /using\s+([\w\s]+(?:method|approach|formula|technique))|applied\s+([\w\s]+(?:method|approach|formula|technique))|through\s+([\w\s]+(?:method|approach|formula|technique))/gi;
+        const confidencePattern = /confident|certain|sure|verified|correct|accurate|precise/gi;
+        
+        // Analyze Gemma's responses
+        const gemmaAnswers: string[] = [];
+        const gemmaMethods: string[] = [];
+        let gemmaConfidenceScore = 0;
+        
+        for (const turn of gemmaFinalTurns) {
+          const answerMatches = [...turn.content.matchAll(answerPattern)];
+          answerMatches.forEach(match => {
+            const answer = (match[1] || match[2] || match[3] || match[4] || '').trim();
+            if (answer && !gemmaAnswers.includes(answer)) {
+              gemmaAnswers.push(answer);
+            }
+          });
+          
+          const methodMatches = [...turn.content.matchAll(methodPattern)];
+          methodMatches.forEach(match => {
+            const method = (match[1] || match[2] || match[3] || '').trim();
+            if (method && !gemmaMethods.includes(method)) {
+              gemmaMethods.push(method);
+            }
+          });
+          
+          const confidenceMatches = turn.content.match(confidencePattern);
+          if (confidenceMatches) {
+            gemmaConfidenceScore += confidenceMatches.length;
+          }
+        }
+        
+        // Analyze Qwen's responses
+        const qwenAnswers: string[] = [];
+        const qwenMethods: string[] = [];
+        let qwenConfidenceScore = 0;
+        
+        for (const turn of qwenFinalTurns) {
+          const answerMatches = [...turn.content.matchAll(answerPattern)];
+          answerMatches.forEach(match => {
+            const answer = (match[1] || match[2] || match[3] || match[4] || '').trim();
+            if (answer && !qwenAnswers.includes(answer)) {
+              qwenAnswers.push(answer);
+            }
+          });
+          
+          const methodMatches = [...turn.content.matchAll(methodPattern)];
+          methodMatches.forEach(match => {
+            const method = (match[1] || match[2] || match[3] || '').trim();
+            if (method && !qwenMethods.includes(method)) {
+              qwenMethods.push(method);
+            }
+          });
+          
+          const confidenceMatches = turn.content.match(confidencePattern);
+          if (confidenceMatches) {
+            qwenConfidenceScore += confidenceMatches.length;
+          }
+        }
+        
+        // Calculate actual consensus
+        const sharedAnswers = gemmaAnswers.filter(a => qwenAnswers.includes(a));
+        const sharedMethods = gemmaMethods.filter(m => qwenMethods.includes(m));
+        const answerSimilarity = sharedAnswers.length > 0 ? sharedAnswers.length / Math.max(gemmaAnswers.length, qwenAnswers.length) : 0;
+        const methodSimilarity = sharedMethods.length > 0 ? sharedMethods.length / Math.max(gemmaMethods.length, qwenMethods.length) : 0;
+        
+        // Calculate confidence based on both models' confidence indicators
+        const totalConfidenceIndicators = gemmaConfidenceScore + qwenConfidenceScore;
+        const maxPossibleConfidence = (gemmaFinalTurns.length + qwenFinalTurns.length) * 5; // Assume max 5 confidence words per turn
+        const confidenceRatio = totalConfidenceIndicators > 0 ? Math.min(totalConfidenceIndicators / maxPossibleConfidence, 1) : 0.5;
+        
+        // Weighted calculation including confidence
+        const overallSimilarity = (answerSimilarity * 0.5 + methodSimilarity * 0.3 + confidenceRatio * 0.2);
+        
+        // Determine consensus level based on actual analysis
+        let consensusLevel: ConsensusLevel;
+        if (overallSimilarity > 0.8 && sharedAnswers.length > 0) {
+          consensusLevel = ConsensusLevel.HIGH_CONSENSUS;
+        } else if (overallSimilarity > 0.5) {
+          consensusLevel = ConsensusLevel.MIXED_VIEWS;
+        } else if (gemmaAnswers.length > 0 && qwenAnswers.length > 0) {
+          consensusLevel = ConsensusLevel.CREATIVE_TENSION;
+        } else {
+          consensusLevel = ConsensusLevel.NO_CONSENSUS;
+        }
+        
+        // Extract key insights from actual content
+        const agreements: string[] = [];
+        if (sharedAnswers.length > 0) {
+          agreements.push(`Both models arrived at: ${sharedAnswers.join(', ')}`);
+        }
+        if (sharedMethods.length > 0) {
+          agreements.push(`Shared approach: ${sharedMethods.join(', ')}`);
+        }
+        
+        const conflicts: string[] = [];
+        const uniqueGemmaAnswers = gemmaAnswers.filter(a => !qwenAnswers.includes(a));
+        const uniqueQwenAnswers = qwenAnswers.filter(a => !gemmaAnswers.includes(a));
+        
+        if (uniqueGemmaAnswers.length > 0 && uniqueQwenAnswers.length > 0) {
+          conflicts.push(`${this.GEMMA_MODEL_ID} proposed ${uniqueGemmaAnswers.join(', ')} while ${this.QWEN_MODEL_ID} proposed ${uniqueQwenAnswers.join(', ')}`);
+        }
+        
+        // Build intelligent synthesis instruction with actual content
+        const latestGemmaContent = gemmaFinalTurns[gemmaFinalTurns.length - 1]?.content || '';
+        const latestQwenContent = qwenFinalTurns[qwenFinalTurns.length - 1]?.content || '';
+        
+        synthesisInstruction = `Generate a comprehensive synthesis for: "${this.conversationState.originalQuery}"
+
+## Key Findings from Collaboration:
+
+### ${this.GEMMA_MODEL_ID} Final Analysis:
+${this.tokenCounter.truncateToTokenLimit(latestGemmaContent, 300)}
+
+### ${this.QWEN_MODEL_ID} Final Analysis:
+${this.tokenCounter.truncateToTokenLimit(latestQwenContent, 300)}
+
+## Extracted Results:
+- **Gemma answers:** ${gemmaAnswers.length > 0 ? gemmaAnswers.join(', ') : 'No explicit answers found'}
+- **Qwen answers:** ${qwenAnswers.length > 0 ? qwenAnswers.join(', ') : 'No explicit answers found'}
+- **Consensus:** ${sharedAnswers.length > 0 ? sharedAnswers.join(', ') : 'No shared answers found'}
+- **Methods used:** ${[...new Set([...gemmaMethods, ...qwenMethods])].join(', ') || 'Various approaches'}
+
+## Your Synthesis Task:
+1. Provide the definitive answer based on the collaboration
+2. Explain the reasoning path that led to this answer
+3. Address any discrepancies between the models
+4. State confidence level based on agreement: ${Math.round(overallSimilarity * 100)}%
+5. Include any important caveats or considerations
+
+Make the synthesis authoritative and actionable.`;
+        
+        // Create intelligent analysis based on actual content
+        analysis = {
+          sessionId: this.conversationState.sessionId,
+          phase: CollaborationPhase.CONSENSUS,
+          consensusLevel,
+          overallSimilarity,
+          modelA: this.GEMMA_MODEL_ID,
+          modelB: this.QWEN_MODEL_ID,
+          confidenceScore: confidenceRatio,
+          keyPoints: {
+            agreements: agreements.length > 0 ? agreements : ['Both models engaged with the problem'],
+            conflicts: conflicts.length > 0 ? conflicts : [],
+            complementaryIdeas: [
+              ...uniqueGemmaAnswers.map(a => `${this.GEMMA_MODEL_ID}: ${a}`),
+              ...uniqueQwenAnswers.map(a => `${this.QWEN_MODEL_ID}: ${a}`)
+            ],
+            novelInsights: [
+              ...(gemmaConfidenceScore > qwenConfidenceScore ? 
+                [`${this.GEMMA_MODEL_ID} showed higher confidence (${gemmaConfidenceScore} indicators)`] : 
+                [`${this.QWEN_MODEL_ID} showed higher confidence (${qwenConfidenceScore} indicators)`]),
+              ...(sharedMethods.length > 0 ? [`Converged on methodology: ${sharedMethods.join(', ')}`] : [])
+            ]
+          }
+        } as AgreementAnalysis;
+        
+        this.logger.info('🧠 Intelligent fallback created', {
+          gemmaAnswers: gemmaAnswers.length,
+          qwenAnswers: qwenAnswers.length,
+          sharedAnswers: sharedAnswers.length,
+          overallSimilarity: Math.round(overallSimilarity * 100) + '%',
+          consensusLevel
+        });
+      }
 
       // The synthesis instruction already contains the properly formatted prompt
       // with intelligent context selection done by conversationManager.generateSynthesis
@@ -1037,7 +1260,20 @@ This is a critical correction - ensure accuracy!`;
     const formatted = PromptFormatter.formatPrompt(modelConfig, systemPrompt, fullPrompt, skipNoThink);
 
     // Get a sequence for this generation
-    const sequence = context.getSequence();
+    let sequence;
+    try {
+      sequence = context.getSequence();
+    } catch (error) {
+      this.logger.error(`Failed to get sequence from context for ${modelId}:`, {
+        error: error instanceof Error ? error.message : String(error),
+        contextInfo: {
+          modelId,
+          phase,
+          contextPoolSize: config.model.contextsPerModel
+        }
+      });
+      throw new Error(`Context sequence error for ${modelId}: ${error instanceof Error ? error.message : String(error)}`);
+    }
     
     try {
       const session = new LlamaChatSession({
@@ -1224,62 +1460,95 @@ This is a critical correction - ensure accuracy!`;
 
     this.logger.warn('⚠️ Generating synthesis with error warnings after max verification attempts');
 
-    const errorSynthesisPrompt = `Generate a final synthesis that acknowledges the detected errors.
+    // Create the error warning header
+    const errorWarning = `⚠️ **VERIFICATION ERRORS DETECTED** ⚠️
 
-**Original Query:** ${this.conversationState.originalQuery}
-
-**Error Details from Verification:**
+The collaborative analysis detected the following issues:
 ${errorDetails}
 
-**YOUR TASK:**
-1. Provide the best possible synthesis of the collaborative work
-2. CLEARLY indicate where errors were detected
-3. Warn the user about the specific issues found
-4. Suggest how to resolve the errors if possible
+Despite these errors, here is the best synthesis we can provide:
 
-Format the response professionally but ensure the errors are prominently displayed.`;
+---
 
-    const context = await this.modelService.acquireContext(this.GEMMA_MODEL_ID);
-    try {
-      const synthesisWithErrors = await this.generateWithModel(
-        this.GEMMA_MODEL_ID,
-        context,
-        errorSynthesisPrompt,
-        CollaborationPhase.CONSENSUS
-      );
+`;
 
-      // Format with error warning
-      const formattedSynthesis = this.formatSynthesisOutput(
-        `⚠️ **VERIFICATION ERRORS DETECTED** ⚠️\n\n${errorDetails}\n\n---\n\n${synthesisWithErrors}`,
-        { 
-          consensusLevel: ConsensusLevel.NO_CONSENSUS, 
-          overallSimilarity: 0.5,
-          modelA: this.GEMMA_MODEL_ID,
-          modelB: this.QWEN_MODEL_ID
-        } as AgreementAnalysis
-      );
+    // Get the synthesis instruction from conversation manager
+    const { synthesis: synthesisInstruction, analysis } = await this.conversationManager.generateSynthesis(
+      this.conversationState.sessionId,
+      this.GEMMA_MODEL_ID
+    );
 
-      // Store the synthesis
+    // Prepend the error warning to the synthesis instruction
+    const fullPrompt = errorWarning + synthesisInstruction;
+
+    // Calculate token allocation
+    const totalContextSize = config.model.contextSize || 4096;
+    const allocation = this.contextAllocator.calculateAllocation(
+      CollaborationPhase.SYNTHESIZE,
+      totalContextSize,
+      '',
+      this.GEMMA_MODEL_ID,
+      'synthesis',
+      this.conversationState.turns.length
+    );
+
+    this.logger.info('🎯 Generating synthesis with errors using FinalAnswerService', {
+      errorDetails: errorDetails.substring(0, 100) + '...',
+      promptTokens: this.tokenCounter.countTokens(fullPrompt),
+      maxGenerationTokens: allocation.maxGenerationTokens
+    });
+
+    // Use FinalAnswerService to ensure proper streaming to synthesis panel
+    const synthesisResult = await this.finalAnswerService.generateFinalAnswer({
+      sessionId: this.conversationState.sessionId,
+      modelId: this.GEMMA_MODEL_ID,
+      prompt: fullPrompt,
+      phase: CollaborationPhase.SYNTHESIZE,
+      tokenAllocation: allocation,
+      routeToSynthesis: true  // CRITICAL: Route to synthesis panel
+    });
+
+    if (synthesisResult.success) {
+      this.logger.info('✅ Synthesis with errors generated successfully', {
+        contentLength: synthesisResult.content.length,
+        tokenMetrics: synthesisResult.tokenMetrics
+      });
+      
+      // Store the synthesis with verification warning
       await this.conversationManager.addTurn(
         this.conversationState.sessionId,
         this.GEMMA_MODEL_ID,
-        formattedSynthesis,
-        0,
+        synthesisResult.content,
+        synthesisResult.tokenMetrics.generationTimeMs,
         undefined
       );
-
-      // Send synthesis update
+      
+      // Send the complete synthesis update
       this.sendMessage({
-        type: SSEMessageType.SYNTHESIS_UPDATE,
-        payload: {
-          finalSynthesis: formattedSynthesis,
-          analysis: null,
-          phase: CollaborationPhase.CONSENSUS
+        type: SSEMessageType.PHASE_UPDATE,
+        payload: { 
+          phase: CollaborationPhase.CONSENSUS, 
+          status: 'synthesis_complete_with_errors',
+          synthesisAnalysis: analysis
         }
       });
+    } else {
+      this.logger.error('❌ Failed to generate synthesis with errors, using fallback');
+      
+      // Fallback to simple summary with error notice
+      const fallbackContent = `⚠️ **VERIFICATION ERRORS DETECTED** ⚠️
 
-    } finally {
-      this.modelService.releaseContext(this.GEMMA_MODEL_ID, context);
+${errorDetails}
+
+The collaborative analysis completed but encountered errors during verification. Please review the conversation history for details.`;
+      
+      await this.finalAnswerService.generateFallbackAnswer({
+        sessionId: this.conversationState.sessionId,
+        modelId: this.GEMMA_MODEL_ID,
+        prompt: fallbackContent,
+        phase: CollaborationPhase.SYNTHESIZE,
+        routeToSynthesis: true
+      });
     }
   }
 

@@ -1,48 +1,50 @@
 /* ============================================================================
-   PROFESSIONAL NEURAL ACTIVATION COLOR SYSTEM
-   High-performance color engineering for maximum cognitive engagement
+   ELECTRIC BLUE & ORANGE THEME - Premium Dark Mode
+   Science-backed color psychology for maximum cognitive engagement
    ============================================================================ */
 
 /* ============================================================================
-   EXECUTIVE POWER PALETTE - Sharp, Sophisticated, Stimulating
+   ELECTRIC NEON PALETTE - Futuristic, Professional, High-Contrast
    ============================================================================ */
 :root {
-  /* TITANIUM SLATE FOUNDATIONS - Professional depth with energy */
-  --md-bg-primary: #2C3E50;           /* EXECUTIVE SLATE - Sophisticated base */
-  --md-bg-secondary: #34495E;         /* STEEL BLUE - Professional depth */
-  --md-bg-tertiary: #41576B;          /* GUNMETAL - Code containers */
-  --md-bg-accent: #4E6A7E;            /* CHROMIUM - Accent zones */
+  /* CHARCOAL FOUNDATIONS - Rich dark backgrounds with depth */
+  --md-bg-primary: #121212;           /* RICH CHARCOAL - Main background */
+  --md-bg-secondary: #1A1A1A;         /* ELEVATED CHARCOAL - Card backgrounds */
+  --md-bg-tertiary: #232323;          /* LIGHTER CHARCOAL - Code containers */
+  --md-bg-accent: #2A2A2A;            /* ACCENT CHARCOAL - Hover states */
   
-  /* CRISP CONTRAST TEXT - Maximum readability */
-  --md-text-primary: #FFFFFF;         /* PURE WHITE - Ultimate clarity */
-  --md-text-secondary: #F5F5F5;       /* PLATINUM - Secondary text */
-  --md-text-muted: #E0E0E0;           /* SILVER - Muted elements */
+  /* HIGH-CONTRAST TEXT HIERARCHY */
+  --md-text-primary: #F0F0F0;         /* OFF-WHITE - Primary text */
+  --md-text-secondary: #E0E0E0;       /* LIGHT GRAY - Secondary text */
+  --md-text-muted: #A8A8A8;           /* MID-GRAY - Muted elements */
   
-  /* ELECTRIC ACCENT SPECTRUM - Mind-activating highlights */
-  --md-orange-bright: #FF6B35;        /* SUNSET BURST - Primary power */
-  --md-orange-medium: #FF8C42;        /* TANGERINE FIRE - Secondary energy */
-  --md-orange-soft: #FFA552;          /* GOLDEN FLAME - Tertiary warmth */
-  --md-coral: #E63946;                /* FERRARI RED - Critical emphasis */
-  --md-amber: #F77F00;                /* MARIGOLD - Special highlights */
-  --md-gold: #FCBF49;                 /* SUNBURST - Maximum importance */
-  --md-red-accent: #D62828;           /* CRIMSON ALERT - Urgent attention */
+  /* ELECTRIC BLUE SPECTRUM - Primary accent system */
+  --md-blue-electric: #1E90FF;        /* ELECTRIC BLUE - Primary accents */
+  --md-blue-bright: #4DA6FF;          /* LIGHTER BLUE - Secondary accents */
+  --md-blue-soft: #6BB6FF;            /* SOFT BLUE - Tertiary accents */
+  --md-blue-pale: #87C3FF;            /* PALE BLUE - Light highlights */
   
-  /* POWER ACCENT SPECTRUM - Maximum contrast and impact */
-  --md-baby-blue: #FFD93D;            /* LIGHTNING YELLOW - Code brilliance */
-  --md-sky-blue: #6BCF7F;             /* EMERALD GLOW - Links/interactive */
-  --md-powder-blue: #FF6B9D;          /* HOT MAGENTA - Power accents */
-  --md-ice-blue: #C7F464;             /* LIME SURGE - Light highlights */
+  /* VIVID ORANGE SPECTRUM - Complementary accents */
+  --md-orange-vivid: #FF8C00;         /* VIVID AMBER - CTAs & highlights */
+  --md-orange-bright: #FFA533;        /* BRIGHT AMBER - Secondary highlights */
+  --md-orange-soft: #FFB84D;          /* SOFT AMBER - Tertiary warmth */
+  --md-orange-pale: #FFCB66;          /* PALE AMBER - Light accents */
+  
+  /* SEMANTIC COLORS - Clear visual communication */
+  --md-success: #4CD964;              /* BRIGHT GREEN - Success states */
+  --md-error: #FF4433;                /* BOLD RED - Error states */
+  --md-warning: #FF8C00;              /* AMBER - Warning states */
   
   /* Interactive Colors */
-  --md-link: var(--md-sky-blue);
-  --md-link-hover: var(--md-baby-blue);
+  --md-link: var(--md-blue-electric);
+  --md-link-hover: var(--md-orange-vivid);
   
-  /* HIGH-IMPACT BORDERS - Maximum visibility */
-  --md-border-subtle: rgba(255, 107, 53, 0.4);
-  --md-border-medium: rgba(255, 107, 53, 0.7);
-  --md-border-strong: rgba(255, 107, 53, 1.0);
-  --md-border-blue-subtle: rgba(255, 217, 61, 0.5);
-  --md-border-blue-medium: rgba(255, 217, 61, 0.8);
+  /* ELECTRIC BORDERS - Neon-inspired edges */
+  --md-border-subtle: rgba(30, 144, 255, 0.2);
+  --md-border-medium: rgba(30, 144, 255, 0.4);
+  --md-border-strong: rgba(30, 144, 255, 0.6);
+  --md-border-orange-subtle: rgba(255, 140, 0, 0.2);
+  --md-border-orange-medium: rgba(255, 140, 0, 0.4);
 }
 
 /* ============================================================================
@@ -62,31 +64,33 @@
    TYPOGRAPHY HIERARCHY - Warm Color Gradation
    ============================================================================ */
 
-/* Main Headings - Decreasing warmth/brightness for hierarchy */
+/* Main Headings - Electric Blue primary, Orange secondary hierarchy */
 .markdown-content h1 {
   font-size: 2.25rem;
   font-weight: 800;
-  color: var(--md-orange-bright);
+  color: var(--md-blue-electric);
   margin: 2rem 0 1rem 0;
   line-height: 1.3;
   letter-spacing: 0.02em;
   border-bottom: 2px solid var(--md-border-medium);
   padding-bottom: 0.5rem;
+  text-shadow: 0 0 20px rgba(30, 144, 255, 0.5);
 }
 
 .markdown-content h2 {
   font-size: 1.875rem;
   font-weight: 700;
-  color: var(--md-orange-medium);
+  color: var(--md-orange-vivid);
   margin: 1.75rem 0 0.875rem 0;
   line-height: 1.3;
   letter-spacing: 0.01em;
+  text-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
 }
 
 .markdown-content h3 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--md-orange-soft);
+  color: var(--md-blue-bright);
   margin: 1.5rem 0 0.75rem 0;
   line-height: 1.4;
 }
@@ -94,7 +98,7 @@
 .markdown-content h4 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--md-coral);
+  color: var(--md-orange-bright);
   margin: 1.25rem 0 0.625rem 0;
   line-height: 1.4;
 }
@@ -102,7 +106,7 @@
 .markdown-content h5 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--md-amber);
+  color: var(--md-blue-soft);
   margin: 1rem 0 0.5rem 0;
   line-height: 1.5;
 }
@@ -110,7 +114,7 @@
 .markdown-content h6 {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--md-gold);
+  color: var(--md-orange-soft);
   margin: 0.875rem 0 0.4375rem 0;
   line-height: 1.5;
   text-transform: uppercase;
@@ -125,7 +129,7 @@
 .markdown-content strong,
 .markdown-content b {
   font-weight: 700;
-  color: var(--md-coral);
+  color: var(--md-orange-vivid);
   font-size: 1.02em;
 }
 
@@ -133,7 +137,7 @@
 .markdown-content em,
 .markdown-content i {
   font-style: italic;
-  color: var(--md-amber);
+  color: var(--md-blue-bright);
   font-size: 1.01em;
 }
 
@@ -144,15 +148,16 @@
 .markdown-content i b {
   font-weight: 700;
   font-style: italic;
-  color: var(--md-gold);
+  color: var(--md-success);
   font-size: 1.05em;
+  text-shadow: 0 0 10px rgba(76, 217, 100, 0.3);
 }
 
 /* Links */
 .markdown-content a {
   color: var(--md-link);
   text-decoration: underline;
-  text-decoration-color: rgba(255, 107, 74, 0.5);
+  text-decoration-color: rgba(30, 144, 255, 0.5);
   text-underline-offset: 0.2em;
   transition: all 0.2s ease;
 }
@@ -160,6 +165,7 @@
 .markdown-content a:hover {
   color: var(--md-link-hover);
   text-decoration-color: var(--md-link-hover);
+  text-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
 }
 
 /* ============================================================================
@@ -169,8 +175,8 @@
 /* Code Blocks */
 .markdown-content pre {
   background-color: var(--md-bg-tertiary);
-  border: 1px solid var(--md-border-blue-subtle);
-  border-left: 4px solid var(--md-baby-blue);
+  border: 1px solid var(--md-border-subtle);
+  border-left: 4px solid var(--md-blue-electric);
   border-radius: 8px;
   padding: 1.25rem;
   margin: 1.5rem 0;
@@ -178,26 +184,29 @@
   font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
   font-size: 0.9rem;
   line-height: 1.6;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.3),
+    inset 0 0 20px rgba(30, 144, 255, 0.05);
 }
 
 .markdown-content pre code {
   background: none;
   border: none;
   padding: 0;
-  color: var(--md-powder-blue);
+  color: var(--md-blue-pale);
   font-size: inherit;
 }
 
 /* Inline Code */
 .markdown-content code {
   background-color: var(--md-bg-accent);
-  color: var(--md-baby-blue);
+  color: var(--md-orange-bright);
   padding: 0.2em 0.4em;
   border-radius: 4px;
   font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
   font-size: 0.9em;
   font-weight: 500;
-  border: 1px solid var(--md-border-blue-subtle);
+  border: 1px solid var(--md-border-orange-subtle);
 }
 
 /* ============================================================================
@@ -216,7 +225,7 @@
 }
 
 .markdown-content ul li::marker {
-  color: var(--md-coral);
+  color: var(--md-blue-electric);
 }
 
 /* Ordered Lists */
@@ -230,7 +239,7 @@
 }
 
 .markdown-content ol li::marker {
-  color: var(--md-orange-medium);
+  color: var(--md-orange-vivid);
   font-weight: 600;
 }
 
@@ -245,18 +254,21 @@
    ============================================================================ */
 .markdown-content blockquote {
   background-color: var(--md-bg-secondary);
-  border-left: 4px solid var(--md-coral);
+  border-left: 4px solid var(--md-blue-electric);
   margin: 1.5rem 0;
   padding: 1rem 1.5rem;
   border-radius: 0 6px 6px 0;
   font-style: italic;
   color: var(--md-text-secondary);
   position: relative;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.2),
+    inset 0 0 20px rgba(30, 144, 255, 0.03);
 }
 
 .markdown-content blockquote::before {
   content: '"';
-  color: var(--md-coral);
+  color: var(--md-blue-electric);
   font-size: 3rem;
   line-height: 1;
   position: absolute;
@@ -280,16 +292,19 @@
   background-color: var(--md-bg-secondary);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(255, 217, 61, 0.3), 0 0 20px rgba(255, 107, 53, 0.2);
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.3),
+    0 0 30px rgba(30, 144, 255, 0.1);
 }
 
 .markdown-content th {
   background-color: var(--md-bg-accent);
-  color: var(--md-orange-bright);
+  color: var(--md-blue-electric);
   font-weight: 600;
   padding: 0.875rem 1rem;
   text-align: left;
   border-bottom: 2px solid var(--md-border-medium);
+  text-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
 }
 
 .markdown-content td {
@@ -303,7 +318,7 @@
 }
 
 .markdown-content tr:nth-child(even) {
-  background-color: rgba(255, 140, 66, 0.05);
+  background-color: rgba(30, 144, 255, 0.03);
 }
 
 /* Table Code */
@@ -317,7 +332,7 @@
    MATHEMATICAL CONTENT (MathJax Integration)
    ============================================================================ */
 .markdown-content .MathJax {
-  color: var(--md-gold) !important;
+  color: var(--md-success) !important;
   background-color: var(--md-bg-secondary);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
@@ -331,16 +346,19 @@
   border-radius: 8px;
   border: 1px solid var(--md-border-medium);
   text-align: center !important;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.2),
+    inset 0 0 20px rgba(76, 217, 100, 0.05);
 }
 
 .markdown-content .MathJax svg {
-  color: var(--md-gold) !important;
+  color: var(--md-success) !important;
 }
 
 .markdown-content .MathJax_Error {
-  color: var(--md-red-accent) !important;
-  background-color: rgba(231, 76, 60, 0.1) !important;
-  border: 1px solid var(--md-red-accent) !important;
+  color: var(--md-error) !important;
+  background-color: rgba(255, 68, 51, 0.1) !important;
+  border: 1px solid var(--md-error) !important;
   border-radius: 4px !important;
   padding: 0.25rem 0.5rem !important;
 }
@@ -367,25 +385,32 @@
 /* Key Result Boxes - When a paragraph contains only bold text */
 .markdown-content p strong:first-child:last-child {
   display: inline-block;
-  background: linear-gradient(135deg, var(--md-bg-accent), var(--md-bg-tertiary));
-  color: var(--md-gold);
+  background: linear-gradient(135deg, 
+    rgba(30, 144, 255, 0.1) 0%, 
+    rgba(255, 140, 0, 0.1) 100%
+  );
+  color: var(--md-text-primary);
   font-size: 1.125rem;
   font-weight: 700;
   padding: 0.75rem 1.25rem;
   margin: 1rem 0;
   border-radius: 8px;
   border: 2px solid var(--md-border-medium);
-  border-left: 4px solid var(--md-coral);
+  border-left: 4px solid var(--md-orange-vivid);
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.2),
+    0 0 20px rgba(255, 140, 0, 0.1);
 }
 
 /* Highlighted/Marked Text */
 .markdown-content mark,
 .markdown-content .highlight {
-  background-color: var(--md-amber);
+  background-color: var(--md-orange-vivid);
   color: var(--md-bg-primary);
   padding: 0.1em 0.3em;
   border-radius: 3px;
   font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 /* ============================================================================
@@ -455,18 +480,19 @@
 
 /* Focus indicators for interactive elements */
 .markdown-content a:focus {
-  outline: 2px solid var(--md-coral);
+  outline: 2px solid var(--md-blue-electric);
   outline-offset: 2px;
   border-radius: 2px;
+  box-shadow: 0 0 10px rgba(30, 144, 255, 0.5);
 }
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   :root {
     --md-text-primary: #ffffff;
-    --md-orange-bright: #ff9f00;
-    --md-coral: #ff7a5c;
-    --md-border-medium: rgba(255, 140, 66, 0.8);
+    --md-blue-electric: #4DA6FF;
+    --md-orange-vivid: #FFA533;
+    --md-border-medium: rgba(30, 144, 255, 0.8);
   }
 }
 
