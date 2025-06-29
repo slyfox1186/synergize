@@ -38,6 +38,7 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
   const synthesisRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const leftStreamManager = useStreamManager({ containerRef: leftPanelRef });
   const rightStreamManager = useStreamManager({ containerRef: rightPanelRef });
@@ -56,6 +57,23 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
       }
     };
   }, []);
+
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    if (textareaRef.current) {
+      // Reset height to calculate the correct scrollHeight
+      textareaRef.current.style.height = '120px'; // minHeight
+      
+      // Calculate the new height based on scrollHeight
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const lineHeight = 24; // Approximate line height in pixels (1.5rem)
+      const maxHeight = lineHeight * 8; // 8 lines max
+      
+      // Set the new height, capped at maxHeight
+      const newHeight = Math.min(scrollHeight, maxHeight);
+      textareaRef.current.style.height = `${newHeight}px`;
+    }
+  }, [promptInput]);
 
   const scrollToSynthesis = useCallback(() => {
     if (synthesisRef.current && !hasScrolledToSynthesis && isSynthesisActive) {
@@ -143,6 +161,19 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+    // Check if Enter is pressed without Shift
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Prevent new line
+      
+      // Only submit if not streaming and prompt is not empty
+      if (!isStreaming && promptInput.trim()) {
+        handleSubmit();
+      }
+    }
+    // Shift+Enter will naturally create a new line
+  };
+
   const handleSubmit = async (): Promise<void> => {
     logger.info('Submit button clicked');
     logger.debug('Selected models:', selectedModels);
@@ -217,20 +248,36 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
     <div className="space-y-6">
       {/* Prompt Input */}
       <div className="space-y-4">
-        <textarea
-          value={promptInput}
-          onChange={(e) => setPromptInput(e.target.value)}
-          placeholder="Enter your prompt here..."
-          className="jarvis-input min-h-[120px] resize-none"
-          disabled={isStreaming}
-        />
-        <button
-          onClick={handleSubmit}
-          disabled={isStreaming || !promptInput.trim()}
-          className="jarvis-button disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isStreaming ? 'Processing...' : 'Initiate Collaboration'}
-        </button>
+        <div className="relative">
+          <textarea
+            ref={textareaRef}
+            value={promptInput}
+            onChange={(e) => setPromptInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Enter your prompt here... (Press Enter to submit, Shift+Enter for new line)"
+            className="jarvis-input resize-none overflow-y-auto transition-height duration-150"
+            style={{
+              minHeight: '120px',
+              lineHeight: '1.5rem'
+            }}
+            disabled={isStreaming}
+          />
+          <div className="absolute bottom-2 right-2 text-jarvis-muted text-xs opacity-50">
+            {promptInput.length > 0 && `${promptInput.split('\n').length} line${promptInput.split('\n').length !== 1 ? 's' : ''}`}
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleSubmit}
+            disabled={isStreaming || !promptInput.trim()}
+            className="jarvis-button disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isStreaming ? 'Processing...' : 'Initiate Collaboration'}
+          </button>
+          <span className="text-jarvis-muted text-sm">
+            Press <kbd className="px-2 py-1 text-xs bg-jarvis-dark rounded border border-jarvis-muted/30">Enter</kbd> to submit
+          </span>
+        </div>
       </div>
 
       {/* Model Response Panels */}
