@@ -52,12 +52,13 @@ export function SynchronizedResizablePanels({
   }, [height, minHeight, maxHeight]);
 
   const resizeHandleClass = `
-    absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize
+    absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize
     flex items-center justify-center
     transition-all duration-200
+    bg-jarvis-darker/80 backdrop-blur-sm
     ${isResizing 
-      ? 'bg-jarvis-primary/30 border-t-2 border-jarvis-primary' 
-      : 'hover:bg-jarvis-primary/10 border-t border-jarvis-primary/20'
+      ? 'bg-jarvis-primary/40 border-t-2 border-jarvis-primary shadow-lg' 
+      : 'hover:bg-jarvis-primary/20 border-t-2 border-jarvis-primary/40'
     }
   `;
 
@@ -87,7 +88,7 @@ export function SynchronizedResizablePanels({
           
           {/* Resize Handle */}
           <div className={resizeHandleClass} onMouseDown={handleMouseDown}>
-            <div className="w-16 h-1 bg-jarvis-primary/50 rounded-full" />
+            <div className="w-20 h-1.5 bg-jarvis-primary/80 rounded-full shadow-sm" />
           </div>
         </div>
       </div>
@@ -116,7 +117,7 @@ export function SynchronizedResizablePanels({
           
           {/* Resize Handle */}
           <div className={resizeHandleClass} onMouseDown={handleMouseDown}>
-            <div className="w-16 h-1 bg-jarvis-primary/50 rounded-full" />
+            <div className="w-20 h-1.5 bg-jarvis-primary/80 rounded-full shadow-sm" />
           </div>
         </div>
       </div>

@@ -247,25 +247,27 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
         }}
       />
 
-      {/* Synthesis Panel */}
-      <div className="model-panel relative">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-jarvis-accent font-tech">Synthesis</h3>
-          <button
-            onClick={() => handleCopy(synthesisRef, 'Synthesis')}
-            className="text-jarvis-accent hover:text-jarvis-primary transition-colors p-2"
-            title="Copy to clipboard"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-          </button>
+      {/* Synthesis Panel - Only show when synthesis is active */}
+      {isSynthesisActive && (
+        <div className="model-panel relative">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-jarvis-accent font-tech">Synthesis</h3>
+            <button
+              onClick={() => handleCopy(synthesisRef, 'Synthesis')}
+              className="text-jarvis-accent hover:text-jarvis-primary transition-colors p-2"
+              title="Copy to clipboard"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
+          </div>
+          <div 
+            ref={synthesisRef}
+            className="min-h-[200px] p-4 bg-jarvis-darker rounded"
+          />
         </div>
-        <div 
-          ref={synthesisRef}
-          className="min-h-[200px] p-4 bg-jarvis-darker rounded"
-        />
-      </div>
+      )}
     </div>
   );
 }
