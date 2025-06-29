@@ -26,6 +26,7 @@ export class StreamManager {
   private scrollingEnabled: boolean = true;
   private scrollableParent: HTMLElement | null = null;
   private scrollListener: (() => void) | null = null;
+  private isFirstContent: boolean = true;
 
   constructor(containerRef: React.RefObject<HTMLDivElement | null>) {
     this.containerRef = containerRef;
@@ -49,25 +50,40 @@ export class StreamManager {
       this.scrollableParent.removeEventListener('scroll', this.scrollListener);
     }
 
+    let lastScrollTop = this.scrollableParent.scrollTop;
+    let ticking = false;
+
     // Add scroll listener to detect when user scrolls to bottom
     this.scrollListener = (): void => {
-      if (!this.scrollableParent) return;
+      if (!this.scrollableParent || ticking) return;
       
+      ticking = true;
       // Use requestAnimationFrame to avoid blocking other events
       requestAnimationFrame(() => {
-        if (!this.scrollableParent) return;
+        if (!this.scrollableParent) {
+          ticking = false;
+          return;
+        }
         
         const { scrollTop, scrollHeight, clientHeight } = this.scrollableParent;
-        const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 5; // 5px tolerance
+        const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 10; // 10px tolerance
+        const isScrollingDown = scrollTop > lastScrollTop;
         
         // Re-enable autoscroll if user scrolls to bottom
-        if (isAtBottom && !this.scrollingEnabled) {
-          this.scrollingEnabled = true;
+        if (isAtBottom) {
+          if (!this.scrollingEnabled) {
+            this.scrollingEnabled = true;
+            console.log('[StreamManager] Auto-scroll re-enabled - user scrolled to bottom');
+          }
         }
-        // Disable autoscroll if user scrolls up
-        else if (!isAtBottom && this.scrollingEnabled) {
+        // Disable autoscroll if user scrolls up away from bottom
+        else if (!isAtBottom && this.scrollingEnabled && !isScrollingDown) {
           this.scrollingEnabled = false;
+          console.log('[StreamManager] Auto-scroll disabled - user scrolled up');
         }
+        
+        lastScrollTop = scrollTop;
+        ticking = false;
       });
     };
 
@@ -126,7 +142,16 @@ export class StreamManager {
           // Find the scrollable parent container (has overflow-y-auto)
           const scrollableParent = container.closest('.overflow-y-auto') as HTMLElement;
           if (scrollableParent) {
-            scrollableParent.scrollTop = scrollableParent.scrollHeight;
+            // Use instant scrolling for first content, smooth for subsequent
+            const behavior = this.isFirstContent ? 'instant' : 'smooth';
+            this.isFirstContent = false;
+            
+            requestAnimationFrame(() => {
+              scrollableParent.scrollTo({
+                top: scrollableParent.scrollHeight,
+                behavior: behavior as ScrollBehavior
+              });
+            });
           }
         }
       }
@@ -178,10 +203,18 @@ export class StreamManager {
     if (container) {
       container.innerHTML = '';
     }
+    
+    // Reset state for new content
+    this.scrollingEnabled = true;
+    this.isFirstContent = true;
   }
 
   setScrollingEnabled(enabled: boolean): void {
     this.scrollingEnabled = enabled;
+  }
+
+  isScrollingEnabled(): boolean {
+    return this.scrollingEnabled;
   }
 
   cleanup(): void {
