@@ -79,6 +79,9 @@ export class CollaborationOrchestrator {
    */
   async startCollaboration(sessionId: string): Promise<void> {
     try {
+      // Reset verification attempts for new collaboration
+      this.verificationAttempts = 0;
+      
       // Initialize conversation management systems
       await this.conversationManager.initialize();
       
@@ -671,11 +674,9 @@ This is a critical correction - ensure accuracy!`;
         undefined
       );
       
-      // Run the phase loop again from REVISE
-      this.logger.info('♻️ Restarting collaboration from REVISE phase after error correction');
-      
-      // Continue with the revised solution by running phase again
-      await this.executeConversationalPhase(CollaborationPhase.REVISE);
+      // The revision is complete. Re-attempt the final synthesis, which will trigger verification again.
+      this.logger.info('♻️ Revision complete, re-attempting final synthesis.');
+      await this.generateFinalSynthesis();
       
     } finally {
       this.modelService.releaseContext(this.GEMMA_MODEL_ID, context);

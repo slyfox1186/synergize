@@ -136,11 +136,14 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* Tables */
+/* Tables - Override prose styles and force proper wrapping */
 .markdown-content table {
-  width: 100%;
+  width: 100% !important;
   border-collapse: collapse;
   margin: 1rem 0;
+  table-layout: fixed !important; /* Force table to respect container width */
+  max-width: 100% !important;
+  overflow: visible !important; /* Override any prose overflow settings */
 }
 
 .markdown-content th,
@@ -148,11 +151,40 @@
   border: 1px solid rgba(0, 255, 255, 0.2);
   padding: 0.5rem;
   text-align: left;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto;
+  vertical-align: top;
+  white-space: normal !important; /* Override any prose white-space settings */
+  overflow: visible !important;
 }
 
 .markdown-content th {
   background-color: rgba(0, 255, 255, 0.1);
   font-weight: 600;
+}
+
+/* Handle code blocks within tables */
+.markdown-content td code,
+.markdown-content th code {
+  word-break: break-all !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: break-word !important;
+}
+
+/* Override any prose table container styles */
+.prose .markdown-content table,
+.prose-invert .markdown-content table {
+  width: 100% !important;
+  table-layout: fixed !important;
+  max-width: 100% !important;
+}
+
+/* Ensure the parent containers don't create horizontal scroll */
+.markdown-content {
+  overflow-x: visible !important;
+  max-width: 100% !important;
 }
 
 /* Horizontal rules */
