@@ -44,7 +44,7 @@ ${userPrompt}<end_of_turn>
 
     return {
       prompt: formattedPrompt,
-      stopTokens: ['<end_of_turn>', '<start_of_turn>user'],
+      stopTokens: ['<end_of_turn>', '</end_of_turn>', '<start_of_turn>user', '<start_of_turn>'],
     };
   }
 
@@ -79,10 +79,9 @@ ${modifiedUserPrompt}<|im_end|>
     const modelName = modelConfig.name.toLowerCase();
     
     if (modelName.includes('gemma')) {
-      // Remove Gemma stop tokens
-      cleaned = cleaned.replace(/<end_of_turn>/g, '');
-      cleaned = cleaned.replace(/<start_of_turn>user/g, '');
-      cleaned = cleaned.replace(/<start_of_turn>model/g, '');
+      // Remove Gemma stop tokens (both correct and malformed versions)
+      cleaned = cleaned.replace(/<\/?end_of_turn>/g, '');
+      cleaned = cleaned.replace(/<\/?start_of_turn>(?:user|model)?/g, '');
     } else if (modelName.includes('qwen')) {
       // Remove Qwen stop tokens
       cleaned = cleaned.replace(/<\|im_end\|>/g, '');
