@@ -857,16 +857,6 @@ This is a critical correction - ensure accuracy!`;
         };
 
         try {
-          // Send immediate signal that synthesis generation is starting
-          this.sendMessage({
-            type: SSEMessageType.PHASE_UPDATE,
-            payload: {
-              phase: CollaborationPhase.SYNTHESIZE,
-              status: 'thinking',
-              message: 'Gemma is analyzing the conversation and preparing synthesis...'
-            }
-          });
-
           await this.generateWithModel(
             this.GEMMA_MODEL_ID,
             context,
@@ -1112,9 +1102,6 @@ This is a critical correction - ensure accuracy!`;
     // Format prompt according to model requirements
     const systemPrompt = this.getSystemPrompt(phase, modelId);
     const formatted = PromptFormatter.formatPrompt(modelConfig, systemPrompt, fullPrompt, skipNoThink);
-    
-    // Debug stop tokens
-    this.logger.debug(`🛑 Stop tokens for ${modelId}: ${JSON.stringify(formatted.stopTokens)}`);
 
     // Get a sequence for this generation
     const sequence = context.getSequence();
@@ -1197,22 +1184,8 @@ This is a critical correction - ensure accuracy!`;
         };
       }
       
-      // Send signal that model is starting to think (right before prompt execution)
-      if (phase === CollaborationPhase.SYNTHESIZE) {
-        this.sendMessage({
-          type: SSEMessageType.PHASE_UPDATE,
-          payload: {
-            phase: CollaborationPhase.SYNTHESIZE,
-            status: 'model_thinking',
-            message: 'Model is processing the synthesis request...'
-          }
-        });
-      }
-      
       // Generate response with formatted prompt
-      this.logger.info(`🚀 Starting generation with stop triggers: ${JSON.stringify(formatted.stopTokens)}`);
       const response = await session.prompt(formatted.prompt, generationOptions);
-      this.logger.info(`✅ Generation complete. Raw output length: ${response.length}`);
 
       if (this.cancelled) return '';
       
