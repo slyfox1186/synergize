@@ -73,15 +73,16 @@ async function checkModels(modelService: ModelService): Promise<HealthCheck> {
       };
     }
     
-    // Check if models are loaded by checking if we can acquire contexts
-    // We'll use a simple approach: check if modelInstances exist
+    // Check if models are loaded WITHOUT acquiring contexts (to avoid infinite loop)
+    // Just check if the model is available in the service
     let loadedCount = 0;
     for (const model of models) {
       try {
-        // Try to acquire and immediately release a context to test if model is loaded
-        const context = await modelService.acquireContext(model.id);
-        modelService.releaseContext(model.id, context);
-        loadedCount++;
+        // Check if model is loaded without acquiring contexts
+        const isLoaded = modelService.isModelLoaded(model.id);
+        if (isLoaded) {
+          loadedCount++;
+        }
       } catch (error) {
         // Model not loaded yet
       }

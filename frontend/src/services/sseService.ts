@@ -6,12 +6,26 @@ const logger = createLogger('SSEService');
 
 export class SSEService {
   private eventSource: EventSource | null = null;
-  private reconnectAttempts = 0;
-  private readonly maxReconnectAttempts = 5;
-  private readonly reconnectDelay = 1000;
-  private reconnectTimeoutId: number | null = null;
+  private userInitiated: boolean = false;
+
+  /**
+   * Enable user-initiated connections (must be called before connect)
+   */
+  enableUserInitiatedConnection(): void {
+    this.userInitiated = true;
+    logger.info('SSE connections enabled for user-initiated actions');
+  }
 
   connect(sessionId: string, onMessage: (message: SSEMessage) => void): void {
+    // Prevent any connections unless explicitly enabled by user action
+    if (!this.userInitiated) {
+      logger.warn('SSE connection blocked - not user initiated', {
+        sessionId,
+        stackTrace: new Error().stack
+      });
+      return;
+    }
+
     if (this.eventSource) {
       this.disconnect();
     }
@@ -19,10 +33,9 @@ export class SSEService {
     const url = `/api/synergize/stream/${sessionId}`;
     const connectionStartTime = Date.now();
     
-    logger.info('SSE connection initiated', {
+    logger.info('SSE connection initiated by user action', {
       sessionId,
-      url,
-      reconnectAttempt: this.reconnectAttempts > 0 ? this.reconnectAttempts : undefined
+      url
     });
     
     this.eventSource = new EventSource(url);
@@ -31,11 +44,8 @@ export class SSEService {
       const connectionTime = Date.now() - connectionStartTime;
       logger.info('SSE connection established', {
         sessionId,
-        connectionTimeMs: connectionTime,
-        wasReconnect: this.reconnectAttempts > 0,
-        reconnectAttempts: this.reconnectAttempts
+        connectionTimeMs: connectionTime
       });
-      this.reconnectAttempts = 0;
       useCollaborationStore.getState().setConnected(true);
     };
 
@@ -62,14 +72,19 @@ export class SSEService {
       logger.error('SSE connection error', error, {
         sessionId,
         readyState,
-        willReconnect: readyState === EventSource.CLOSED && this.reconnectAttempts < this.maxReconnectAttempts,
+        willReconnect: false, // No automatic reconnection
         connectionDuration: Date.now() - connectionStartTime
       });
       
       useCollaborationStore.getState().setConnected(false);
       
+      // No automatic reconnection - user must initiate new session
       if (readyState === EventSource.CLOSED) {
-        this.handleReconnect(sessionId, onMessage);
+        logger.info('SSE connection closed, no automatic reconnection attempted', {
+          sessionId,
+          reason: 'automatic_reconnection_disabled'
+        });
+        useCollaborationStore.getState().setError('Connection lost. Please start a new collaboration.');
       }
     };
   }
@@ -114,53 +129,19 @@ export class SSEService {
     }
   }
 
-  private handleReconnect(sessionId: string, onMessage: (message: SSEMessage) => void): void {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      logger.error('Maximum reconnection attempts exceeded', undefined, {
-        sessionId,
-        attempts: this.reconnectAttempts,
-        maxAttempts: this.maxReconnectAttempts
-      });
-      useCollaborationStore.getState().setError('Connection lost. Please refresh the page.');
-      return;
-    }
-
-    this.reconnectAttempts++;
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-
-    logger.info('Scheduling reconnection', {
-      sessionId,
-      attempt: this.reconnectAttempts,
-      delayMs: delay,
-      maxAttempts: this.maxReconnectAttempts
-    });
-    
-    this.reconnectTimeoutId = window.setTimeout(() => {
-      this.reconnectTimeoutId = null;
-      this.connect(sessionId, onMessage);
-    }, delay);
-  }
 
   disconnect(): void {
-    // Clear any pending reconnection timeouts
-    if (this.reconnectTimeoutId !== null) {
-      window.clearTimeout(this.reconnectTimeoutId);
-      this.reconnectTimeoutId = null;
-      logger.info('Cleared pending reconnection timeout');
-    }
-    
     if (this.eventSource) {
       logger.info('Disconnecting SSE', {
-        readyState: this.eventSource.readyState,
-        reconnectAttempts: this.reconnectAttempts
+        readyState: this.eventSource.readyState
       });
       this.eventSource.close();
       this.eventSource = null;
       useCollaborationStore.getState().setConnected(false);
     }
     
-    // Reset reconnection state to prevent stale reconnect attempts
-    this.reconnectAttempts = 0;
+    // Reset user-initiated flag to prevent automatic reconnections
+    this.userInitiated = false;
   }
 
   isConnected(): boolean {

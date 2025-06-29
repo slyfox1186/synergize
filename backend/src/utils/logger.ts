@@ -69,7 +69,11 @@ export class Logger {
       error: '❌'
     };
     
-    let output = `${levelEmoji[entry.level]} ${timestamp} [${entry.service}] ${entry.message}`;
+    // Color the timestamp, brackets, and service name
+    const coloredTimestamp = `\x1b[97m${timestamp}\x1b[0m`; // Bright white for timestamp
+    const coloredBrackets = `\x1b[37m[\x1b[0m\x1b[36m${entry.service}\x1b[0m\x1b[37m]\x1b[0m`; // Light gray brackets, cyan service
+    
+    let output = `${levelEmoji[entry.level]} ${coloredTimestamp} ${coloredBrackets} ${entry.message}`;
     
     // Add error details if present
     if (entry.error) {
@@ -86,14 +90,15 @@ export class Logger {
     if (entry.context && Object.keys(entry.context).length > 0) {
       output += '\n   └─ Context:';
       Object.entries(entry.context).forEach(([key, value]) => {
+        const coloredKey = this.colorContextKey(key);
         const valueStr = this.formatContextValue(value);
         if (valueStr.includes('\n')) {
-          output += `\n      ${key}:`;
+          output += `\n      ${coloredKey}:`;
           valueStr.split('\n').forEach(line => {
             output += `\n        ${line}`;
           });
         } else {
-          output += `\n      ${key}: ${valueStr}`;
+          output += `\n      ${coloredKey}: ${valueStr}`;
         }
       });
     }
@@ -194,6 +199,11 @@ export class Logger {
     this.writeToFile(entry).catch(() => {/* Already logged in writeToFile */});
   }
 
+  // Helper method to color context keys - consistent color for all field names
+  private colorContextKey(key: string): string {
+    return `\x1b[96m${key}\x1b[0m`; // Bright cyan for all field names
+  }
+
   // Helper method to format context values
   private formatContextValue(value: unknown, indent = 0): string {
     if (value === null) return 'null';
@@ -223,12 +233,14 @@ export class Logger {
     }
     
     if (typeof value === 'string') {
-      return value.length > 100 ? `"${value.substring(0, 100)}..."` : `"${value}"`;
+      // Consistent color for all string values
+      const coloredValue = `\x1b[93m${value}\x1b[0m`; // Bright yellow for all string values
+      return value.length > 100 ? `"${coloredValue.substring(0, 100)}..."` : `"${coloredValue}"`;
     }
     
-    // Color numeric values bright green
+    // Consistent color for all numeric values
     if (typeof value === 'number') {
-      return `\x1b[92m${value}\x1b[0m`; // Bright green
+      return `\x1b[93m${value}\x1b[0m`; // Bright yellow for all values (same as strings)
     }
     
     return String(value);

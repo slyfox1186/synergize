@@ -64,11 +64,12 @@ if [ ! -d "frontend/node_modules" ]; then
     cd frontend && npm install && cd ..
 fi
 
+# Always clean build artifacts to prevent stale code issues
+echo "🧹 Cleaning old build artifacts..."
+rm -rf dist frontend/dist backend/dist
+
 # Build in production mode
 if [ "$NODE_ENV" = "production" ]; then
-    echo "🧹 Cleaning old build artifacts..."
-    rm -rf dist frontend/dist
-    
     echo "🔨 Building for production..."
     npm run build
     

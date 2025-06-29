@@ -90,10 +90,10 @@ export class StreamManager {
       
       const { scrollTop, scrollHeight, clientHeight } = this.scrollableParent;
       const distanceFromBottom = scrollHeight - clientHeight - scrollTop;
-      const isAtBottom = distanceFromBottom < 50; // 50px tolerance for better UX
+      const isAtBottom = distanceFromBottom < 80; // Increased from 50 to 80px - easier to re-engage
       
       // Only mark user interaction if they scroll significantly away from bottom
-      if (distanceFromBottom > 100) {
+      if (distanceFromBottom > 40) { // Reduced from 100 to 40 - easier to disengage
         this.userHasScrolled = true;
       }
       
@@ -104,7 +104,7 @@ export class StreamManager {
         logger.debug('Auto-scroll re-enabled', { distanceFromBottom });
       }
       // Disable autoscroll only if user scrolls significantly away from bottom
-      else if (distanceFromBottom > 75 && this.scrollingEnabled) {
+      else if (distanceFromBottom > 30 && this.scrollingEnabled) { // Reduced from 75 to 30 - easier to disengage
         this.scrollingEnabled = false;
         logger.debug('Auto-scroll disabled', { distanceFromBottom });
       }
@@ -118,7 +118,7 @@ export class StreamManager {
     // Set initial scroll state
     if (this.scrollableParent) {
       const { scrollTop, scrollHeight, clientHeight } = this.scrollableParent;
-      const isAtBottom = scrollHeight - clientHeight - scrollTop < 50;
+      const isAtBottom = scrollHeight - clientHeight - scrollTop < 80; // Increased from 50 to 80px - easier to re-engage
       this.scrollingEnabled = isAtBottom;
     }
   }
@@ -247,7 +247,7 @@ export class StreamManager {
     // Don't auto-scroll if user has recently interacted and isn't near bottom
     if (this.userHasScrolled) {
       const { scrollTop, scrollHeight, clientHeight } = this.scrollableParent;
-      const isNearBottom = scrollHeight - clientHeight - scrollTop < 50;
+      const isNearBottom = scrollHeight - clientHeight - scrollTop < 80; // Increased from 50 to 80px - easier to re-engage
       if (!isNearBottom) return;
       // User is near bottom, so allow auto-scroll and reset interaction flag
       this.userHasScrolled = false;
@@ -282,7 +282,7 @@ export class StreamManager {
     const wasEnabled = this.scrollingEnabled;
     
     // Update scroll state based on current position
-    this.scrollingEnabled = distanceFromBottom < 50;
+    this.scrollingEnabled = distanceFromBottom < 80; // Increased from 50 to 80px - easier to re-engage
     
     if (wasEnabled !== this.scrollingEnabled) {
       logger.debug('Scroll state updated', { 
@@ -292,7 +292,7 @@ export class StreamManager {
     }
     
     // If we're at bottom, perform an immediate scroll to ensure we're fully aligned
-    if (this.scrollingEnabled && distanceFromBottom > 0 && distanceFromBottom < 50) {
+    if (this.scrollingEnabled && distanceFromBottom > 0 && distanceFromBottom < 80) { // Increased from 50 to 80px - easier to re-engage
       this.scrollableParent.scrollTo({
         top: scrollHeight,
         behavior: 'instant' as ScrollBehavior

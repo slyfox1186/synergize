@@ -23,6 +23,21 @@ export class SSEController {
     const clientIp = req.ip || req.connection.remoteAddress;
     const startTime = Date.now();
     
+    // Validate session with strict timestamp checking
+    const isValidSession = await this.validateSession(sessionId);
+    if (!isValidSession) {
+      this.logger.warn('Rejecting invalid or stale session connection', {
+        sessionId,
+        clientIp,
+        reason: 'session_validation_failed'
+      });
+      res.status(410).json({ 
+        error: 'Session invalid or expired. Please start a new collaboration.',
+        sessionId 
+      });
+      return;
+    }
+    
     this.logger.info('SSE connection initiated', {
       sessionId,
       clientIp,
@@ -106,6 +121,46 @@ export class SSEController {
       this.cleanup(sessionId);
       orchestrator.cancel();
     });
+  }
+
+  /**
+   * Validate session with strict timestamp checking to prevent stale session processing
+   */
+  private async validateSession(sessionId: string): Promise<boolean> {
+    try {
+      const sessionData = await this.redisService.getSession(sessionId);
+      
+      if (!sessionData || typeof sessionData !== 'object') {
+        this.logger.debug('Session validation failed: no session data', { sessionId });
+        return false;
+      }
+
+      // Check if session has required createdAt timestamp
+      if (!('createdAt' in sessionData)) {
+        this.logger.debug('Session validation failed: missing createdAt timestamp', { sessionId });
+        return false;
+      }
+
+      const session = sessionData as { createdAt: string };
+      const sessionAge = Date.now() - new Date(session.createdAt).getTime();
+      
+      // Strict age limits: 1 minute in development, 5 minutes in production
+      const maxAge = process.env.NODE_ENV === 'development' ? 60000 : 300000; // 1 min dev, 5 min prod
+      const isValid = sessionAge <= maxAge;
+      
+      this.logger.info('Session validation completed', {
+        sessionId,
+        sessionAgeMs: sessionAge,
+        maxAgeMs: maxAge,
+        isValid,
+        environment: process.env.NODE_ENV || 'development'
+      });
+      
+      return isValid;
+    } catch (error) {
+      this.logger.error('Session validation error', error, { sessionId });
+      return false;
+    }
   }
 
   private sendMessage(res: Response, message: SSEMessage): void {

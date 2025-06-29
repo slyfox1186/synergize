@@ -35,6 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', createHealthCheck(modelService));
+app.get('/api/health', createHealthCheck(modelService));
 
 // API Routes
 app.post('/api/synergize/initiate', (req, res, next) => {
@@ -42,10 +43,11 @@ app.post('/api/synergize/initiate', (req, res, next) => {
   logger.info('[POST /api/synergize/initiate] Headers:', req.headers);
   logger.info('[POST /api/synergize/initiate] Body:', req.body);
   
-  const { prompt, models, sessionId } = req.body as { 
+  const { prompt, models, sessionId, createdAt } = req.body as { 
     prompt?: string; 
     models?: string[]; 
-    sessionId?: string; 
+    sessionId?: string;
+    createdAt?: string;
   };
   
   if (!prompt || !models || models.length !== 2) {
@@ -65,8 +67,15 @@ app.post('/api/synergize/initiate', (req, res, next) => {
   }
 
   logger.info(`[POST /api/synergize/initiate] Storing session ${sessionId} in Redis`);
-  // Store session in Redis
-  redisService.storeSession(sessionId, { prompt, models, status: 'initiated' })
+  // Store session in Redis with timestamp for validation
+  const sessionData = { 
+    prompt, 
+    models, 
+    status: 'initiated',
+    createdAt: createdAt || new Date().toISOString() // Use provided timestamp or create new one
+  };
+  
+  redisService.storeSession(sessionId, sessionData)
     .then(() => {
       logger.info(`[POST /api/synergize/initiate] Session ${sessionId} stored successfully`);
       res.json({ 
@@ -124,6 +133,11 @@ async function startServer(): Promise<void> {
   try {
     // Initialize services
     await redisService.connect();
+    
+    // Clear all previous session data to ensure clean startup
+    logger.info('Clearing previous session data for clean startup...');
+    await redisService.clearAllSessions();
+    
     await modelService.initialize();
     
     server.listen(PORT, () => {

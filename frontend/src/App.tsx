@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import { useCollaborationStore } from '@/store/collaborationStore';
 import { SynergizerArena } from '@/components/SynergizerArena';
@@ -8,43 +8,137 @@ import { SSEService } from '@/services/sseService';
 import { createLogger } from '@/utils/logger';
 import { ModelConfig } from '@/types';
 
+// Extend Window interface for development tools
+declare global {
+  interface Window {
+    __REACT_DEVTOOLS_GLOBAL_HOOK__?: {
+      onCommitFiberRoot: unknown;
+      onCommitFiberUnmount: unknown;
+    };
+    gc?: () => void;
+  }
+}
+
 const logger = createLogger('App');
 
 function App(): JSX.Element {
   const [sseService] = useState(() => new SSEService());
   const { isConnected, error, models } = useCollaborationStore();
+  const initializationRef = useRef(false);
 
   useEffect(() => {
-    logger.info('App initializing - disconnecting any existing SSE connections');
-    
-    // Ensure no stale SSE connections exist and reset store
-    sseService.disconnect();
-    useCollaborationStore.getState().reset();
-    
-    // Clear any potential stale state from previous sessions
-    useCollaborationStore.getState().setSessionId('');
-    
-    // Emergency cleanup: Force close any lingering EventSource connections
-    // This is aggressive but necessary to prevent stale reconnect attempts
-    try {
-      // Clear any existing intervals/timeouts that might be running
-      for (let i = 1; i < 99999; i++) window.clearTimeout(i);
-    } catch (e) {
-      // Ignore errors, this is just aggressive cleanup
+    // Prevent double initialization in development
+    if (initializationRef.current) {
+      logger.debug('App initialization already in progress, skipping');
+      return;
     }
+    initializationRef.current = true;
+    
+    logger.info('App initializing - performing comprehensive cleanup for fresh start');
+    
+    // STEP 1: Disconnect and cleanup SSE service
+    sseService.disconnect();
+    logger.debug('SSE service disconnected');
+    
+    // STEP 2: Force complete store reset
+    const store = useCollaborationStore.getState();
+    store.reset();
+    store.setSessionId(''); // Ensure no session ID persists
+    store.setConnected(false);
+    store.setStreaming(false);
+    store.setError(null);
+    store.setStatusMessage(null);
+    
+    // STEP 3: Clear all browser storage to prevent any client-side persistence
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear any Zustand persistence keys that might exist
+      const persistenceKeys = [
+        'collaboration-store',
+        'synergize-store', 
+        'session-store',
+        'app-state'
+      ];
+      
+      persistenceKeys.forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
+      
+      logger.info('Browser storage completely cleared');
+    } catch (e) {
+      logger.warn('Could not clear browser storage', { 
+        error: e instanceof Error ? e.message : String(e) 
+      });
+    }
+    
+    // STEP 4: Clear intervals/timeouts from previous sessions
+    try {
+      // Clear up to 10000 IDs to be thorough
+      for (let i = 1; i < 10000; i++) {
+        window.clearTimeout(i);
+        window.clearInterval(i);
+      }
+      logger.debug('Cleared intervals and timeouts');
+    } catch (e) {
+      // Ignore errors, this is just cleanup
+    }
+    
+    // STEP 5: Additional development mode cleanup
+    if (process.env.NODE_ENV === 'development') {
+      // Clear any React DevTools or hot reload state
+      if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+        try {
+          window.__REACT_DEVTOOLS_GLOBAL_HOOK__.onCommitFiberRoot = null;
+          window.__REACT_DEVTOOLS_GLOBAL_HOOK__.onCommitFiberUnmount = null;
+        } catch (e) {
+          // Ignore DevTools cleanup errors
+        }
+      }
+      
+      // Force garbage collection if available
+      if (window.gc) {
+        try {
+          window.gc();
+        } catch (e) {
+          // gc() not available, that's fine
+        }
+      }
+      
+      logger.debug('Development mode cleanup completed');
+    }
+    
+    // STEP 6: Log final clean state
+    const finalState = useCollaborationStore.getState();
+    logger.info('Comprehensive cleanup completed - final state', {
+      sessionId: finalState.sessionId,
+      isConnected: finalState.isConnected,
+      phase: finalState.currentPhase,
+      isStreaming: finalState.isStreaming,
+      hasError: finalState.error !== null,
+      modelCount: finalState.models.length
+    });
     
     logger.info('Checking backend readiness...');
     
     // Function to check if backend is ready
     const checkBackendHealth = async (): Promise<boolean> => {
       try {
-        const response = await fetch('/health', { 
+        // Use /api/health endpoint through existing proxy
+        const response = await fetch('/api/health', { 
           method: 'GET',
-          signal: AbortSignal.timeout(2000) // 2 second timeout
+          signal: AbortSignal.timeout(5000) // 5 second timeout
         });
-        return response.ok;
+        // Check JSON content even for 503 responses (Vite proxy issue)
+        const healthData = await response.json();
+        // Make sure models are actually loaded, not just that server is running
+        return healthData.status === 'healthy' && 
+               healthData.checks?.models?.status === 'ok';
       } catch (error) {
-        // Backend not ready yet
+        // Backend not ready yet (ECONNREFUSED is expected during startup)
+        // The Vite proxy will handle this gracefully now
         return false;
       }
     };
@@ -52,14 +146,19 @@ function App(): JSX.Element {
     // Function to wait for backend and then fetch models
     const waitForBackendAndFetchModels = async (): Promise<void> => {
       let attempts = 0;
-      const maxAttempts = 30; // 30 seconds max wait
+      const maxAttempts = 60; // 60 seconds max wait (models take time to load)
+      
+      // Add initial delay to let backend start
+      logger.info('Waiting for backend to start...');
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second initial delay
       
       while (attempts < maxAttempts) {
+        logger.debug(`Health check attempt ${attempts + 1}/${maxAttempts}`);
         const isReady = await checkBackendHealth();
         
         if (isReady) {
-          logger.info('Backend ready! Fetching models...');
-          // Backend is ready, now fetch models
+          logger.info('Backend ready! Models are loaded. Fetching model list...');
+          // Backend is ready with models loaded, now fetch models via proxy
           try {
             const res = await fetch('/api/models');
             logger.debug('Models API response status', { status: res.status });
@@ -102,10 +201,15 @@ function App(): JSX.Element {
           return; // Exit the function once we've successfully connected
         }
         
-        // Backend not ready, wait 1 second and try again
+        // Backend not ready, wait 2 seconds and try again (longer interval for startup)
         attempts++;
-        logger.debug(`Backend not ready, attempt ${attempts}/${maxAttempts}`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (attempts <= 10) {
+          // More frequent checks in first 20 seconds
+          await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second
+        } else {
+          // Less frequent checks after that
+          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 seconds
+        }
       }
       
       // If we get here, backend didn't become ready within timeout
