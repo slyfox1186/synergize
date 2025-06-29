@@ -64,7 +64,7 @@ export function ModelSelector(): JSX.Element {
         </div>
       </div>
 
-      {selectedModels?.[0] && selectedModels[1] && (
+      {selectedModels && selectedModels.length >= 2 && selectedModels[0] && selectedModels[1] && (
         <div className="text-sm text-jarvis-accent text-center animate-pulse-glow">
           {selectedModels[0]} ⚡ {selectedModels[1]}
         </div>

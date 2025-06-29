@@ -23,6 +23,15 @@ interface SearchResult {
   metadata: Record<string, unknown>;
 }
 
+// Type definitions for Redis FT.SEARCH response
+type RedisSearchResponse = [
+  number,           // Total number of results
+  ...Array<[
+    string,         // Document key
+    Array<string>   // Field name-value pairs
+  ]>
+];
+
 export class RedisVectorStore {
   private redis: Redis;
   private embeddingService: EmbeddingService;
@@ -197,41 +206,65 @@ export class RedisVectorStore {
       const vecBytes = Buffer.from(new Float32Array(queryVector).buffer);
       
       // Execute search
-      const results = await this.redis.call(
+      const rawResults = await this.redis.call(
         'FT.SEARCH',
         this.indexName,
         vectorQuery,
         'PARAMS', '2', 'vec', vecBytes,
         'RETURN', '3', '$.content', '$.metadata', 'vector_score',
         'DIALECT', '2'
-      ) as unknown[];
+      );
       
-      // Parse results
+      // Safely parse results with type checking
       const searchResults: SearchResult[] = [];
       
-      for (let i = 1; i < results.length; i += 2) {
-        const docKey = results[i] as string;
-        const fields = results[i + 1] as unknown[];
+      if (!Array.isArray(rawResults) || rawResults.length === 0) {
+        this.logger.warn('Invalid Redis search response format');
+        return searchResults;
+      }
+      
+      // First element is the total count
+      const totalCount = typeof rawResults[0] === 'number' ? rawResults[0] : 0;
+      
+      // Process each result pair (document key + fields)
+      for (let i = 1; i < rawResults.length; i += 2) {
+        const docKey = rawResults[i];
+        const fields = rawResults[i + 1];
+        
+        // Validate document key
+        if (typeof docKey !== 'string') {
+          this.logger.warn(`Invalid document key at index ${i}:`, docKey);
+          continue;
+        }
         
         // Parse fields returned by Redis
         let content = '';
-        let metadata = {};
+        let metadata: Record<string, unknown> = {};
         let score = 0;
         
         if (Array.isArray(fields)) {
           for (let j = 0; j < fields.length; j += 2) {
-            const fieldName = fields[j] as string;
-            const fieldValue = fields[j + 1] as string;
+            const fieldName = fields[j];
+            const fieldValue = fields[j + 1];
             
-            if (fieldName === '$.content') {
+            if (typeof fieldName !== 'string') continue;
+            
+            if (fieldName === '$.content' && typeof fieldValue === 'string') {
               content = fieldValue;
-            } else if (fieldName === '$.metadata') {
-              metadata = typeof fieldValue === 'string' ? JSON.parse(fieldValue) : fieldValue;
-            } else if (fieldName === 'vector_score') {
+            } else if (fieldName === '$.metadata' && fieldValue) {
+              try {
+                metadata = typeof fieldValue === 'string' ? JSON.parse(fieldValue) : fieldValue;
+              } catch (error) {
+                this.logger.warn('Failed to parse metadata:', error);
+                metadata = {};
+              }
+            } else if (fieldName === 'vector_score' && typeof fieldValue === 'string') {
               // Convert distance to similarity: For COSINE distance, 0 = identical, 2 = opposite
               // Convert to similarity score where 1 = identical, 0 = opposite
               const distance = parseFloat(fieldValue);
-              score = Math.max(0, 1 - (distance / 2));
+              if (!isNaN(distance)) {
+                score = Math.max(0, 1 - (distance / 2));
+              }
             }
           }
         }
