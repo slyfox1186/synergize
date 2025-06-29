@@ -24,9 +24,56 @@ export class StreamManager {
   private readonly bufferMap = new Map<string, string>();  // Store accumulated markdown per phase
   private readonly completedResponses = new Map<string, boolean>(); // Track completed responses per model/phase
   private scrollingEnabled: boolean = true;
+  private scrollableParent: HTMLElement | null = null;
+  private scrollListener: (() => void) | null = null;
 
   constructor(containerRef: React.RefObject<HTMLDivElement | null>) {
     this.containerRef = containerRef;
+    // Don't initialize scroll detection immediately - wait for content
+  }
+
+  private initializeScrollDetection(): void {
+    const container = this.containerRef.current;
+    if (!container) return;
+
+    // Find the scrollable parent
+    this.scrollableParent = container.closest('.overflow-y-auto') as HTMLElement;
+    if (!this.scrollableParent) {
+      // Try again later when DOM is fully ready
+      setTimeout(() => this.initializeScrollDetection(), 100);
+      return;
+    }
+
+    // Remove existing listener if any
+    if (this.scrollListener) {
+      this.scrollableParent.removeEventListener('scroll', this.scrollListener);
+    }
+
+    // Add scroll listener to detect when user scrolls to bottom
+    this.scrollListener = (): void => {
+      if (!this.scrollableParent) return;
+      
+      // Use requestAnimationFrame to avoid blocking other events
+      requestAnimationFrame(() => {
+        if (!this.scrollableParent) return;
+        
+        const { scrollTop, scrollHeight, clientHeight } = this.scrollableParent;
+        const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 5; // 5px tolerance
+        
+        // Re-enable autoscroll if user scrolls to bottom
+        if (isAtBottom && !this.scrollingEnabled) {
+          this.scrollingEnabled = true;
+        }
+        // Disable autoscroll if user scrolls up
+        else if (!isAtBottom && this.scrollingEnabled) {
+          this.scrollingEnabled = false;
+        }
+      });
+    };
+
+    this.scrollableParent.addEventListener('scroll', this.scrollListener, { 
+      passive: true
+    });
   }
 
   appendTokens(chunk: TokenChunk): void {
@@ -76,7 +123,11 @@ export class StreamManager {
         // Auto-scroll to bottom (only for non-synthesis content and when enabled)
         const container = this.containerRef.current;
         if (container && this.currentModelId !== 'synthesis' && this.scrollingEnabled) {
-          container.scrollTop = container.scrollHeight;
+          // Find the scrollable parent container (has overflow-y-auto)
+          const scrollableParent = container.closest('.overflow-y-auto') as HTMLElement;
+          if (scrollableParent) {
+            scrollableParent.scrollTop = scrollableParent.scrollHeight;
+          }
         }
       }
     }
@@ -109,6 +160,12 @@ export class StreamManager {
 
       container.appendChild(phaseDiv);
       this.phaseContainers.set(key, content);
+      
+      // Initialize scroll detection only when we start adding content
+      if (!this.scrollableParent && this.containerRef.current) {
+        // Use a small delay to ensure DOM is ready
+        setTimeout(() => this.initializeScrollDetection(), 10);
+      }
     }
   }
 
@@ -128,7 +185,12 @@ export class StreamManager {
   }
 
   cleanup(): void {
-    // No cleanup needed since we're not using RAF anymore
+    // Remove scroll listener
+    if (this.scrollListener && this.scrollableParent) {
+      this.scrollableParent.removeEventListener('scroll', this.scrollListener);
+      this.scrollListener = null;
+      this.scrollableParent = null;
+    }
   }
 }
 

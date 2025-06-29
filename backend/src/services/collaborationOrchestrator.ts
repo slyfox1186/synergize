@@ -448,20 +448,29 @@ export class CollaborationOrchestrator {
     });
     
     try {
-      // Build verification prompt for Qwen
-      const verificationPrompt = this.buildQwenVerificationPrompt();
+      // Use the sophisticated token allocation system instead of manual prompt building
+      const conversationPrompt = await this.conversationManager.buildConversationPrompt(
+        this.conversationState.sessionId,
+        this.QWEN_MODEL_ID,
+        await this.buildQwenVerificationPrompt() // Pass our verification prompt as the new prompt
+      );
       
+      this.logger.info(`🎯 Using sophisticated token allocation for verification:`);
+      this.logger.info(`   Generation tokens: ${conversationPrompt.metadata.tokenAllocation.maxGenerationTokens}`);
+      this.logger.info(`   History tokens: ${conversationPrompt.metadata.tokenAllocation.actualHistoryTokens}`);
+      this.logger.info(`   Total allocated: ${conversationPrompt.metadata.tokenAllocation.totalAllocated}`);
+
       // Acquire context for Qwen
       const context = await this.modelService.acquireContext(this.QWEN_MODEL_ID);
       try {
-        // Generate Qwen's verification WITHOUT /no_think to enable thinking mode
+        // Generate Qwen's verification using the properly allocated prompt
         const response = await this.generateWithModel(
           this.QWEN_MODEL_ID,
           context,
-          verificationPrompt,
+          conversationPrompt.currentTurn,
           CollaborationPhase.CONSENSUS,
-          undefined,
-          undefined,
+          conversationPrompt.conversationContext,  // Use the properly allocated conversation context
+          conversationPrompt.metadata.tokenAllocation,  // Use the calculated allocation
           true // skipNoThink flag to enable thinking mode
         );
         
@@ -525,42 +534,27 @@ export class CollaborationOrchestrator {
   
   /**
    * BUILD QWEN VERIFICATION PROMPT
+   * Now uses sophisticated token allocation system - can be more detailed
    */
-  private buildQwenVerificationPrompt(): string {
+  private async buildQwenVerificationPrompt(): Promise<string> {
     if (!this.conversationState) return '';
     
-    const originalQuery = this.conversationState.originalQuery;
-    const recentTurns = this.conversationState.turns.slice(-6); // Last 6 turns for context
+    // Get structured solutions from both models - system will handle token limits
+    const solutions = await this.conversationManager.getStructuredSolutions(this.conversationState.sessionId);
+    const gemmaAnswer = solutions.get(this.GEMMA_MODEL_ID);
+    const qwenAnswer = solutions.get(this.QWEN_MODEL_ID);
     
-    // Extract the most recent consensus/synthesis attempts
-    const consensusTurns = recentTurns.filter(t => t.phase === CollaborationPhase.CONSENSUS);
-    const lastConsensus = consensusTurns[consensusTurns.length - 1]?.content || '';
+    let solutionSummary = '';
+    if (gemmaAnswer?.value) solutionSummary += `Gemma's Answer: ${gemmaAnswer.value}\n`;
+    if (qwenAnswer?.value) solutionSummary += `Qwen's Answer: ${qwenAnswer.value}\n`;
     
-    return `You are performing a FINAL VERIFICATION before the synthesis is presented to the user.
+    return `FINAL VERIFICATION: Perform thorough error checking on the solutions.
 
-**Original Problem:**
-${originalQuery}
+${solutionSummary}
+Check for mathematical errors, logical flaws, or incorrect reasoning.
 
-**Recent Collaborative Work:**
-${recentTurns.map(t => `[${t.modelId}]: ${t.content.substring(0, 300)}...`).join('\n\n')}
-
-**Current Proposed Answer:**
-${lastConsensus}
-
-**YOUR CRITICAL VERIFICATION TASK:**
-1. CHECK for mathematical errors, logical flaws, or incorrect reasoning
-2. VERIFY all calculations and formulas are correct
-3. ENSURE the answer actually solves the original problem
-4. IDENTIFY any assumptions that may be wrong
-5. CONFIRM the final numerical answer is accurate
-
-If you find ANY errors, explain them clearly. If the answer is correct, confirm it.
-
-Use your FULL REASONING CAPABILITIES to verify this answer thoroughly.
-
-IMPORTANT: 
-- If you find errors, start your response with "ERROR DETECTED:" followed by the explanation
-- If the answer is correct, start your response with "VERIFICATION PASSED:"`;
+If you find ANY errors, start your response with "ERROR DETECTED:"
+If everything is correct, start with "VERIFICATION PASSED:"`;
   }
   
   /**
