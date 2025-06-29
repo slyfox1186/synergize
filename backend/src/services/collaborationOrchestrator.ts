@@ -9,7 +9,8 @@ import { TokenCounter } from './tokenCounter.js';
 import { 
   CollaborationPhase, 
   SSEMessage, 
-  SSEMessageType
+  SSEMessageType,
+  TokenChunk
 } from '../models/types.js';
 import { ConversationState, ConversationTurn } from '../models/conversationTypes.js';
 import { ModelRole, AgreementAnalysis, ConsensusLevel } from '../models/curatedConversationTypes.js';
@@ -775,13 +776,22 @@ This is a critical correction - ensure accuracy!`;
         const originalCompleteStream = this.streamingService.completeStream.bind(this.streamingService);
         
         this.streamingService.addToken = (modelId: string, phase: CollaborationPhase, token: string): void => {
-          // Always route synthesis to the synthesis panel
-          originalAddToken('synthesis', phase, token);
+          // Only route to synthesis panel if we're in SYNTHESIS phase
+          if (phase === CollaborationPhase.SYNTHESIZE) {
+            originalAddToken('synthesis', phase, token);
+          } else {
+            // For any other phase, use the original modelId
+            originalAddToken(modelId, phase, token);
+          }
         };
         
         this.streamingService.completeStream = (modelId: string, phase: CollaborationPhase): void => {
-          // Also route completion to synthesis panel
-          originalCompleteStream('synthesis', phase);
+          // Only route to synthesis panel if we're in SYNTHESIS phase
+          if (phase === CollaborationPhase.SYNTHESIZE) {
+            originalCompleteStream('synthesis', phase);
+          } else {
+            originalCompleteStream(modelId, phase);
+          }
         };
 
         try {
