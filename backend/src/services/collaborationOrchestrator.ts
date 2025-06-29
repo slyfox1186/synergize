@@ -1164,7 +1164,7 @@ This is a critical correction - ensure accuracy!`;
         topK: modelConfig.settings.topK,
         minP: modelConfig.settings.minP,
         maxTokens: maxTokens,
-        customStopTriggers: formatted.stopTokens,  // Properly configure stop sequences
+        customStopTriggers: formatted.stopTokens,  // Array of strings is valid
         onToken: (tokens: Token[]) => {
           if (this.cancelled) return;
           
@@ -1210,9 +1210,10 @@ This is a critical correction - ensure accuracy!`;
       }
       
       // Generate response with formatted prompt
-      this.logger.info(`🚀 Starting generation with stop tokens: ${JSON.stringify(formatted.stopTokens)}`);
-      const response = await session.prompt(formatted.prompt, generationOptions);
-      this.logger.info(`✅ Generation complete. Raw output length: ${response.length}`);
+      this.logger.info(`🚀 Starting generation with stop triggers: ${JSON.stringify(formatted.stopTokens)}`);
+      const result = await session.promptWithMeta(formatted.prompt, generationOptions);
+      const response = result.response;
+      this.logger.info(`✅ Generation complete. Raw output length: ${response.length}, Stop reason: ${result.stopReason}`);
 
       if (this.cancelled) return '';
       
