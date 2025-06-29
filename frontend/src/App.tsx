@@ -253,7 +253,7 @@ function App(): JSX.Element {
       <header className="border-b border-synergy-primary/20 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-tech font-bold text-synergy-primary text-glow">
+            <h1 className="rainbow-text font-tech font-bold">
               SYNERGIZE
             </h1>
             <div className="flex items-center gap-4">

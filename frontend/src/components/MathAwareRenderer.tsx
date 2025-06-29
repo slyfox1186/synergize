@@ -146,11 +146,12 @@ export const MathAwareRenderer: React.FC<MathAwareRendererProps> = ({
 
   // Use effect to update innerHTML to avoid React reconciliation issues
   useEffect(() => {
-    if (containerRef.current) {
+    if (containerRef.current && html) {
+      // Set content immediately for faster rendering
       containerRef.current.innerHTML = html;
       
-      // Process math with MathJax if available
-      if (window.MathJax?.typesetPromise) {
+      // Process math with MathJax if available and content exists
+      if (window.MathJax?.typesetPromise && html.trim()) {
         // Ensure MathJax is ready before typesetting
         const typesetMath = async (): Promise<void> => {
           try {
@@ -158,14 +159,22 @@ export const MathAwareRenderer: React.FC<MathAwareRendererProps> = ({
             if (window.MathJax?.startup?.promise) {
               await window.MathJax.startup.promise;
             }
-            if (window.MathJax?.typesetPromise && containerRef.current) {
+            // Only typeset if we still have the container and content
+            if (window.MathJax?.typesetPromise && containerRef.current && containerRef.current.innerHTML.trim()) {
               await window.MathJax.typesetPromise([containerRef.current]);
             }
           } catch (e) {
-            // Ignore errors during streaming
+            // Log errors in development for debugging
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('MathJax typeset error:', e);
+            }
           }
         };
-        typesetMath();
+        
+        // Use requestAnimationFrame to ensure DOM is updated before MathJax processing
+        requestAnimationFrame(() => {
+          typesetMath();
+        });
       }
     }
   }, [html]);

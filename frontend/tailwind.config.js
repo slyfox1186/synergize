@@ -8,14 +8,14 @@ export default {
     extend: {
       colors: {
         synergy: {
-          primary: '#00d4ff',
-          secondary: '#ff6b00',
-          accent: '#ffd700',
-          dark: '#0a0a0a',
-          darker: '#050505',
-          light: '#1a1a1a',
-          text: '#e0e0e0',
-          muted: '#808080'
+          primary: '#FFD93D',     // LIGHTNING YELLOW - Maximum visibility
+          secondary: '#FF6B35',   // SUNSET BURST - Power orange
+          accent: '#6BCF7F',      // EMERALD GLOW - Success green
+          dark: '#34495E',        // STEEL BLUE - Professional depth
+          darker: '#2C3E50',      // EXECUTIVE SLATE - Sophisticated base
+          light: '#41576B',       // GUNMETAL - Elevated containers
+          text: '#FFFFFF',        // PURE WHITE - Maximum clarity
+          muted: '#E0E0E0'        // SILVER - Subtle elements
         }
       },
       animation: {

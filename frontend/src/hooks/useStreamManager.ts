@@ -46,7 +46,8 @@ export function useStreamManager({ onPhaseChange }: StreamManagerOptions): {
         modelId: chunk.modelId,
         phase: chunk.phase,
         bufferLength: bufferContent.length,
-        hasBuffer: Boolean(bufferContent)
+        hasBuffer: Boolean(bufferContent),
+        finalContent: bufferContent.slice(-50) // Last 50 chars for debugging
       });
       
       // Mark the final state as complete in the map
@@ -56,13 +57,25 @@ export function useStreamManager({ onPhaseChange }: StreamManagerOptions): {
         // CRITICAL FIX: Preserve the buffer content when marking as complete
         const finalContent = bufferMap.current.get(key) || existingContent?.content || '';
         
-        newMap.set(key, {
-          phase: chunk.phase,
-          modelId: chunk.modelId,
-          content: finalContent,  // Use the buffer content, not just existing
-          isComplete: true,
-          hasIncompleteMath: false
-        });
+        // Ensure we don't lose content on completion
+        if (finalContent.trim()) {
+          newMap.set(key, {
+            phase: chunk.phase,
+            modelId: chunk.modelId,
+            content: finalContent,  // Use the buffer content, not just existing
+            isComplete: true,
+            hasIncompleteMath: false
+          });
+          
+          logger.info('✅ FINAL CONTENT SET', {
+            key,
+            contentLength: finalContent.length,
+            preview: finalContent.substring(0, 100) + (finalContent.length > 100 ? '...' : '')
+          });
+        } else {
+          logger.warn('⚠️ COMPLETION WITHOUT CONTENT', { key, existingContent: existingContent?.content?.slice(0, 50) });
+        }
+        
         return newMap;
       });
       return;

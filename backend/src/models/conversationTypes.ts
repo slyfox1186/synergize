@@ -38,6 +38,15 @@ export interface ConversationTurn {
     isFinalAnswer?: boolean;       // Marks conclusive turns
     isVerification?: boolean;      // Marks verification turns
     structuredSolution?: StructuredSolution; // Extracted solution data
+    // History optimization metadata
+    isCompressed?: boolean;        // Marks compressed turns
+    isOptimized?: boolean;         // Marks optimized turns
+    originalTokens?: number;       // Original token count before compression
+    compressedTokens?: number;     // Token count after compression
+    compressionRatio?: number;     // Compression ratio achieved
+    keyPoints?: string[];          // Preserved key points
+    optimizedBy?: string;          // Model that performed optimization
+    optimizedAt?: number;          // Timestamp of optimization
   };
 }
 
