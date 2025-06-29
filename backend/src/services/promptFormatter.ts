@@ -72,10 +72,26 @@ ${modifiedUserPrompt}<|im_end|>
   /**
    * Extract response from model output (removes formatting tokens)
    */
-  static extractResponse(_modelConfig: ModelConfig, rawOutput: string): string {
-    // With proper stop tokens set, the model should stop generating before these tokens
-    // This method now just trims whitespace
-    return rawOutput.trim();
+  static extractResponse(modelConfig: ModelConfig, rawOutput: string): string {
+    // Clean up any stop tokens that might have leaked through
+    let cleaned = rawOutput.trim();
+    
+    const modelName = modelConfig.name.toLowerCase();
+    
+    if (modelName.includes('gemma')) {
+      // Remove Gemma stop tokens
+      cleaned = cleaned.replace(/<end_of_turn>/g, '');
+      cleaned = cleaned.replace(/<start_of_turn>user/g, '');
+      cleaned = cleaned.replace(/<start_of_turn>model/g, '');
+    } else if (modelName.includes('qwen')) {
+      // Remove Qwen stop tokens
+      cleaned = cleaned.replace(/<\|im_end\|>/g, '');
+      cleaned = cleaned.replace(/<\|im_start\|>user/g, '');
+      cleaned = cleaned.replace(/<\|im_start\|>assistant/g, '');
+      cleaned = cleaned.replace(/<\|im_start\|>system/g, '');
+    }
+    
+    return cleaned.trim();
   }
 
   /**

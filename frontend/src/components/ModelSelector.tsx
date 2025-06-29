@@ -16,17 +16,17 @@ export function ModelSelector(): JSX.Element {
 
   return (
     <div className="mb-8 space-y-4">
-      <h2 className="text-xl font-tech text-jarvis-primary">Select Models for Collaboration</h2>
+      <h2 className="text-xl font-tech text-synergy-primary">Select Models for Collaboration</h2>
       
       <div className="grid grid-cols-2 gap-4">
         {/* Model 1 Selector */}
         <div>
-          <label className="block text-sm text-jarvis-muted mb-2">Model 1</label>
+          <label className="block text-sm text-synergy-muted mb-2">Model 1</label>
           <select
             value={selectedModels?.[0] || ''}
             onChange={(e) => handleModelSelect(0, e.target.value)}
             disabled={isStreaming}
-            className="jarvis-input"
+            className="synergy-input"
           >
             <option value="">Select a model...</option>
             {models.map((model: ModelConfig) => (
@@ -43,12 +43,12 @@ export function ModelSelector(): JSX.Element {
 
         {/* Model 2 Selector */}
         <div>
-          <label className="block text-sm text-jarvis-muted mb-2">Model 2</label>
+          <label className="block text-sm text-synergy-muted mb-2">Model 2</label>
           <select
             value={selectedModels?.[1] || ''}
             onChange={(e) => handleModelSelect(1, e.target.value)}
             disabled={isStreaming}
-            className="jarvis-input"
+            className="synergy-input"
           >
             <option value="">Select a model...</option>
             {models.map((model: ModelConfig) => (
@@ -65,7 +65,7 @@ export function ModelSelector(): JSX.Element {
       </div>
 
       {selectedModels && selectedModels.length >= 2 && selectedModels[0] && selectedModels[1] && (
-        <div className="text-sm text-jarvis-accent text-center animate-pulse-glow">
+        <div className="text-sm text-synergy-accent text-center animate-pulse-glow">
           {selectedModels[0]} ⚡ {selectedModels[1]}
         </div>
       )}

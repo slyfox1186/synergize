@@ -4,7 +4,7 @@ export class StreamingService {
   constructor(private readonly sendMessage: (message: SSEMessage) => void) {}
 
   addToken(modelId: string, phase: CollaborationPhase, token: string): void {
-    // Stream tokens immediately without buffering
+    // Stream tokens immediately without filtering
     this.sendMessage({
       type: SSEMessageType.TOKEN_CHUNK,
       payload: {
