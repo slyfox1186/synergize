@@ -1212,7 +1212,7 @@ This is a critical correction - ensure accuracy!`;
       // Generate response with formatted prompt
       this.logger.info(`🚀 Starting generation with stop triggers: ${JSON.stringify(formatted.stopTokens)}`);
       const result = await session.promptWithMeta(formatted.prompt, generationOptions);
-      const response = result.response;
+      const response = typeof result.response === 'string' ? result.response : result.response.join('');
       this.logger.info(`✅ Generation complete. Raw output length: ${response.length}, Stop reason: ${result.stopReason}`);
 
       if (this.cancelled) return '';
