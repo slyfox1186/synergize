@@ -63,7 +63,7 @@ See our comprehensive [Installation Guide](INSTALL.md) for detailed setup instru
 ```bash
 # Clone and install
 git clone https://github.com/slyfox1186/synergize.git
-cd synergize
+cd synergize || exit 1
 npm install
 
 # Download models (see INSTALL.md for details)
