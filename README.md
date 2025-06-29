@@ -90,9 +90,9 @@ Download these GGUF models and place them in the `models/` directory:
    - Filename: `qwen3-14b-ud-q4-k-xl.gguf`
    - Role: Verification and critique
 
-You can find GGUF models at:
-- [Hugging Face](https://huggingface.co/models?search=gguf)
-- [TheBloke's Models](https://huggingface.co/TheBloke)
+Download the models from:
+- **Qwen 3 14B**: https://huggingface.co/unsloth/Qwen3-14B-GGUF
+- **Gemma 3 12B**: https://huggingface.co/google/gemma-3-12b-it-qat-q4_0-gguf
 
 ## 📖 Usage
 
