@@ -669,8 +669,10 @@ export class ConversationStateManager {
     tokenBudget: number
   ): Promise<ConversationTurn[]> {
     try {
-      // If LLM Analytics is available, use intelligent retrieval
-      if (this.llmAnalytics) {
+      // If LLM Analytics is available AND properly implemented, use intelligent retrieval
+      if (this.llmAnalytics && 
+          typeof this.llmAnalytics.generateHypotheticalDocument === 'function' &&
+          typeof this.llmAnalytics.rerankDocuments === 'function') {
         this.logger.info('🧠 Using LLM-enhanced retrieval for context building');
         
         // Step 1: Generate enhanced query using HyDE
