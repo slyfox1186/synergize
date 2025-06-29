@@ -23,14 +23,6 @@ interface SearchResult {
   metadata: Record<string, unknown>;
 }
 
-// Type definitions for Redis FT.SEARCH response
-type RedisSearchResponse = [
-  number,           // Total number of results
-  ...Array<[
-    string,         // Document key
-    Array<string>   // Field name-value pairs
-  ]>
-];
 
 export class RedisVectorStore {
   private redis: Redis;
@@ -223,8 +215,7 @@ export class RedisVectorStore {
         return searchResults;
       }
       
-      // First element is the total count
-      const totalCount = typeof rawResults[0] === 'number' ? rawResults[0] : 0;
+      // First element is the total count (not used but part of Redis response format)
       
       // Process each result pair (document key + fields)
       for (let i = 1; i < rawResults.length; i += 2) {
