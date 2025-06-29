@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 
 import { RedisService } from '../services/redisService.js';
+import { ModelService } from '../services/modelService.js';
 import { getErrorMessage } from '../utils/typeGuards.js';
 
 interface HealthCheckUsage {
@@ -15,19 +16,22 @@ interface HealthCheck {
   message?: string;
 }
 
-export async function healthCheck(_req: Request, res: Response): Promise<void> {
-  const health = {
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    checks: {
-      memory: checkMemory(),
-      redis: await checkRedis(),
-    },
-  };
+export function createHealthCheck(modelService: ModelService) {
+  return async function healthCheck(_req: Request, res: Response): Promise<void> {
+    const health = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      checks: {
+        memory: checkMemory(),
+        redis: await checkRedis(),
+        models: await checkModels(modelService),
+      },
+    };
 
-  const overallStatus = Object.values(health.checks).every(check => check.status === 'ok') ? 200 : 503;
-  res.status(overallStatus).json(health);
+    const overallStatus = Object.values(health.checks).every(check => check.status === 'ok') ? 200 : 503;
+    res.status(overallStatus).json(health);
+  };
 }
 
 function checkMemory(): HealthCheck {
@@ -53,6 +57,50 @@ function checkRedis(): HealthCheck {
   } catch (error) {
     return { 
       status: 'error', 
+      message: getErrorMessage(error),
+    };
+  }
+}
+
+async function checkModels(modelService: ModelService): Promise<HealthCheck> {
+  try {
+    const models = await modelService.getAvailableModels();
+    
+    if (models.length === 0) {
+      return {
+        status: 'loading',
+        message: 'No models available yet',
+      };
+    }
+    
+    // Check if models are loaded by checking if we can acquire contexts
+    // We'll use a simple approach: check if modelInstances exist
+    let loadedCount = 0;
+    for (const model of models) {
+      try {
+        // Try to acquire and immediately release a context to test if model is loaded
+        const context = await modelService.acquireContext(model.id);
+        modelService.releaseContext(model.id, context);
+        loadedCount++;
+      } catch (error) {
+        // Model not loaded yet
+      }
+    }
+    
+    if (loadedCount === 0) {
+      return {
+        status: 'loading',
+        message: `Models found: ${models.length}, loaded: 0`,
+      };
+    }
+    
+    return {
+      status: 'ok',
+      message: `Models loaded: ${loadedCount}/${models.length}`,
+    };
+  } catch (error) {
+    return {
+      status: 'error',
       message: getErrorMessage(error),
     };
   }

@@ -173,6 +173,17 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
     }
   };
 
+  const handleCopyPrompt = async (): Promise<void> => {
+    if (!promptInput.trim()) return;
+    
+    try {
+      await navigator.clipboard.writeText(promptInput);
+      logger.info('Copied prompt to clipboard');
+    } catch (error) {
+      logger.error('Failed to copy prompt:', error);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
     // Check if Enter is pressed without Shift
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -284,6 +295,19 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
             }}
             disabled={isStreaming}
           />
+          {/* Copy button */}
+          {promptInput.trim() && (
+            <button
+              onClick={handleCopyPrompt}
+              className="absolute top-2 right-2 text-jarvis-accent hover:text-jarvis-primary transition-colors p-1.5 rounded opacity-75 hover:opacity-100"
+              title="Copy prompt to clipboard"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
+          )}
+          {/* Line counter */}
           <div className="absolute bottom-2 right-2 text-jarvis-muted text-xs opacity-50">
             {promptInput.length > 0 && `${promptInput.split('\n').length} line${promptInput.split('\n').length !== 1 ? 's' : ''}`}
           </div>
@@ -311,6 +335,15 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
           onFocus: () => {
             leftStreamManager.checkScrollPosition();
             logger.debug('Left panel focused - checking scroll position');
+          },
+          onResizeStart: () => {
+            leftStreamManager.setResizing(true);
+            logger.debug('Left panel resize started - ignoring scroll events');
+          },
+          onResizeEnd: () => {
+            leftStreamManager.setResizing(false);
+            leftStreamManager.checkScrollPosition();
+            logger.debug('Left panel resize ended - re-enabling scroll detection');
           }
         }}
         rightPanel={{
@@ -320,6 +353,15 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
           onFocus: () => {
             rightStreamManager.checkScrollPosition();
             logger.debug('Right panel focused - checking scroll position');
+          },
+          onResizeStart: () => {
+            rightStreamManager.setResizing(true);
+            logger.debug('Right panel resize started - ignoring scroll events');
+          },
+          onResizeEnd: () => {
+            rightStreamManager.setResizing(false);
+            rightStreamManager.checkScrollPosition();
+            logger.debug('Right panel resize ended - re-enabling scroll detection');
           }
         }}
       />
