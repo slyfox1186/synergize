@@ -20,7 +20,7 @@ A multi-model AI collaboration system where Large Language Models work together 
 
 ## 🌟 Key Features
 
-- **Multi-Phase Collaboration**: LLMs progress through BRAINSTORM → CRITIQUE → REVISE → SYNTHESIZE → CONSENSUS phases
+- **Multi-Phase Collaboration**: LLMs progress through phases: `BRAINSTORM → CRITIQUE → REVISE → SYNTHESIZE → CONSENSUS`
 - **Dual-Model Architecture**: Gemma (12B) and Qwen (14B) models work together with specialized roles
 - **Real-Time Streaming**: Server-Sent Events (SSE) for smooth token streaming with batching optimization
 - **Advanced Context Management**: Gemini-inspired token allocation algorithm prevents context overflow
