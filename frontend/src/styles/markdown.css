@@ -1,203 +1,358 @@
 /* ============================================================================
-   SYNERGIZE MARKDOWN - Clean, Compact Dark Theme
+   SYNERGIZE MARKDOWN - V2 - FUTURISTIC DARK THEME
    ============================================================================ */
 
-.markdown-content {
-  color: #e6e6e6;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+@layer components {
+  .markdown-content {
+    color: #e0e0e0; /* Slightly softer white for better readability */
+    font-size: 1rem; /* Increased base font size for clarity */
+    line-height: 1.7; /* Generous line height for long-form content */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-/* Headings */
-.markdown-content h1,
-.markdown-content h2,
-.markdown-content h3,
-.markdown-content h4,
-.markdown-content h5,
-.markdown-content h6 {
-  font-weight: 600;
-  line-height: 1.25;
-  margin-top: 1em;
-  margin-bottom: 0.5em;
-  color: #1E90FF;
-}
+  /* --- TYPOGRAPHY & SPACING --- */
 
-.markdown-content h1 { font-size: 1.5rem; }
-.markdown-content h2 { font-size: 1.3rem; }
-.markdown-content h3 { font-size: 1.1rem; }
-.markdown-content h4 { font-size: 1rem; }
-.markdown-content h5 { font-size: 0.9rem; }
-.markdown-content h6 { font-size: 0.85rem; }
+  /* Establish a consistent vertical rhythm */
+  .markdown-content > * + * {
+    margin-top: 1.25em;
+  }
 
-/* Paragraphs */
-.markdown-content p {
-  margin: 0.5em 0;
-}
+  /* Remove margins from first and last children */
+  .markdown-content > *:first-child {
+    margin-top: 0;
+  }
 
-/* Lists */
-.markdown-content ul,
-.markdown-content ol {
-  margin: 0.5em 0;
-  padding-left: 2em;
-}
+  .markdown-content > *:last-child {
+    margin-bottom: 0;
+  }
 
-.markdown-content li {
-  margin: 0.25em 0;
-}
+  .markdown-content h1,
+  .markdown-content h2,
+  .markdown-content h3 {
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
+    line-height: 1.2;
+    font-weight: 700;
+    text-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
+  }
 
-/* Nested lists should have proper indentation */
-.markdown-content li > ul,
-.markdown-content li > ol {
-  margin: 0.25em 0;
-}
+  .markdown-content h1 { 
+    font-size: 2rem; 
+    color: #fff; 
+    border-bottom: 2px solid rgba(30, 144, 255, 0.3);
+    padding-bottom: 0.5em;
+  }
+  .markdown-content h2 { font-size: 1.5rem; color: #1E90FF; }
+  .markdown-content h3 { font-size: 1.25rem; color: #1E90FF; }
+  .markdown-content h4, 
+  .markdown-content h5, 
+  .markdown-content h6 {
+    margin-top: 1.25em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    color: #e0e0e0;
+  }
 
-/* Links */
-.markdown-content a {
-  color: #1E90FF;
-  text-decoration: none;
-  border-bottom: 1px solid rgba(30, 144, 255, 0.3);
-}
+  .markdown-content h4 { font-size: 1.1rem; }
+  .markdown-content h5 { font-size: 1rem; }
+  .markdown-content h6 { font-size: 0.9rem; }
 
-.markdown-content a:hover {
-  color: #FF8C00;
-  border-bottom-color: #FF8C00;
-}
+  .markdown-content p {
+    /* Margins handled by the general selector `> * + *` */
+    margin: 0;
+  }
 
-/* Code */
-.markdown-content code {
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
-  font-size: 0.85em;
-  background-color: rgba(255, 255, 255, 0.1);
-  padding: 0.1em 0.3em;
-  border-radius: 3px;
-}
+  /* --- LISTS --- */
 
-.markdown-content pre {
-  background-color: #0d1117;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 1em;
-  margin: 0.5em 0;
-  overflow-x: auto;
-}
+  .markdown-content ul,
+  .markdown-content ol {
+    padding-left: 1.5rem; /* Base indentation */
+  }
 
-.markdown-content pre code {
-  background: transparent;
-  padding: 0;
-  font-size: 0.85rem;
-  line-height: 1.5;
-}
+  .markdown-content li {
+    margin: 0.5em 0;
+  }
 
-/* Blockquotes */
-.markdown-content blockquote {
-  margin: 0.5em 0;
-  padding: 0.5em 1em;
-  border-left: 4px solid #1E90FF;
-  background-color: rgba(30, 144, 255, 0.05);
-  font-style: italic;
-}
+  /* Add visual hierarchy with theme-colored markers */
+  .markdown-content ul li::marker {
+    color: #1E90FF; /* Theme-colored list markers */
+  }
 
-/* Tables */
-.markdown-content table {
-  width: 100%;
-  margin: 0.5em 0;
-  border-collapse: collapse;
-}
+  .markdown-content ol li::marker {
+    color: #FF8C00; /* Orange for ordered lists */
+    font-weight: 600;
+  }
 
-.markdown-content th,
-.markdown-content td {
-  padding: 0.5em;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  text-align: left;
-}
+  /* Nested lists get tighter spacing and more indentation */
+  .markdown-content li > ul,
+  .markdown-content li > ol {
+    margin-top: 0.5em;
+    margin-bottom: 0;
+    padding-left: 1.25rem; /* Nested indentation */
+  }
 
-.markdown-content th {
-  background-color: rgba(255, 255, 255, 0.05);
-  font-weight: 600;
-}
+  /* Second level nested lists */
+  .markdown-content li li > ul,
+  .markdown-content li li > ol {
+    padding-left: 1rem;
+  }
 
-/* Strong/Bold */
-.markdown-content strong,
-.markdown-content b {
-  font-weight: 600;
-  color: #fff;
-}
+  /* Tweak spacing when paragraphs are inside list items */
+  .markdown-content li > p {
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+  }
 
-/* Emphasis/Italic */
-.markdown-content em,
-.markdown-content i {
-  font-style: italic;
-}
+  /* Remove extra space from nested content */
+  .markdown-content li > *:first-child {
+    margin-top: 0;
+  }
+  .markdown-content li > *:last-child {
+    margin-bottom: 0;
+  }
 
-/* Horizontal Rule */
-.markdown-content hr {
-  margin: 1em 0;
-  border: none;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.2);
-}
+  /* --- LINKS --- */
 
-/* Remove excessive margins */
-.markdown-content > *:first-child {
-  margin-top: 0;
-}
+  .markdown-content a {
+    color: #1E90FF;
+    text-decoration: none;
+    font-weight: 500;
+    border-bottom: 1px solid rgba(30, 144, 255, 0.4);
+    transition: all 0.2s ease-in-out;
+  }
 
-.markdown-content > *:last-child {
-  margin-bottom: 0;
-}
+  .markdown-content a:hover {
+    color: #FF8C00;
+    border-bottom-color: #FF8C00;
+    text-shadow: 0 0 8px rgba(255, 140, 0, 0.5);
+  }
 
-/* Compact spacing for nested content */
-.markdown-content li > *:first-child {
-  margin-top: 0;
-}
+  /* --- CODE BLOCKS --- */
 
-.markdown-content li > *:last-child {
-  margin-bottom: 0;
-}
+  /* Inline code */
+  .markdown-content code {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+    font-size: 0.9em;
+    background-color: rgba(30, 144, 255, 0.1);
+    color: #a3ceff;
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    vertical-align: middle;
+  }
 
-/* Fix list item markers */
-.markdown-content ul {
-  list-style-type: disc;
-}
+  /* Code blocks */
+  .markdown-content pre {
+    background-color: #0D1117; /* GitHub dark background */
+    border: 1px solid rgba(30, 144, 255, 0.2);
+    border-radius: 8px;
+    padding: 1.25em;
+    overflow-x: auto;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
 
-.markdown-content ul ul {
-  list-style-type: circle;
-}
+  .markdown-content pre code {
+    background: none;
+    padding: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #c9d1d9; /* GitHub dark default text */
+  }
 
-.markdown-content ul ul ul {
-  list-style-type: square;
-}
+  /* Add scrollbar styling to code blocks */
+  .markdown-content pre::-webkit-scrollbar {
+    height: 8px;
+  }
 
-.markdown-content ol {
-  list-style-type: decimal;
-}
+  .markdown-content pre::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+  }
 
-/* Ensure proper spacing between different list levels */
-.markdown-content li > p {
-  margin: 0;
-}
+  .markdown-content pre::-webkit-scrollbar-thumb {
+    background: rgba(30, 144, 255, 0.3);
+    border-radius: 4px;
+  }
 
-/* Images */
-.markdown-content img {
-  max-width: 100%;
-  height: auto;
-}
+  .markdown-content pre::-webkit-scrollbar-thumb:hover {
+    background: rgba(30, 144, 255, 0.5);
+  }
 
-/* Definition lists */
-.markdown-content dl {
-  margin: 0.5em 0;
-}
+  /* --- BLOCKQUOTES & RULES --- */
 
-.markdown-content dt {
-  font-weight: 600;
-  margin-top: 0.5em;
-}
+  .markdown-content blockquote {
+    padding: 0.75em 1.25em;
+    border-left: 3px solid #1E90FF;
+    background-color: rgba(30, 144, 255, 0.08);
+    color: #b0c4de; /* Lighter, muted color for quotes */
+    font-style: italic;
+  }
 
-.markdown-content dd {
-  margin-left: 2em;
-  margin-bottom: 0.5em;
+  .markdown-content blockquote p {
+    margin: 0;
+  }
+
+  .markdown-content blockquote > * + * {
+    margin-top: 0.75em;
+  }
+
+  .markdown-content hr {
+    margin: 2em 0;
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right,
+      transparent,
+      rgba(30, 144, 255, 0.3) 20%,
+      rgba(30, 144, 255, 0.3) 80%,
+      transparent
+    );
+  }
+
+  /* --- TABLES --- */
+
+  .markdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .markdown-content th,
+  .markdown-content td {
+    padding: 0.75em 1em;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .markdown-content th {
+    background-color: rgba(30, 144, 255, 0.15);
+    font-weight: 600;
+    color: #1E90FF;
+    text-align: left;
+  }
+
+  .markdown-content tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  .markdown-content tr:hover {
+    background-color: rgba(30, 144, 255, 0.05);
+  }
+
+  /* --- EMPHASIS & STRONG --- */
+
+  .markdown-content strong,
+  .markdown-content b {
+    font-weight: 700;
+    color: #FF8C00; /* Use orange for emphasis */
+  }
+
+  .markdown-content em,
+  .markdown-content i {
+    font-style: italic;
+    color: #e0e0e0;
+  }
+
+  /* --- IMAGES & MEDIA --- */
+
+  .markdown-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .markdown-content figure {
+    margin: 1.5em 0;
+  }
+
+  .markdown-content figcaption {
+    margin-top: 0.5em;
+    text-align: center;
+    color: #808080;
+    font-size: 0.9em;
+    font-style: italic;
+  }
+
+  /* --- DEFINITION LISTS --- */
+
+  .markdown-content dl {
+    margin: 1em 0;
+  }
+
+  .markdown-content dt {
+    font-weight: 600;
+    color: #1E90FF;
+    margin-top: 1em;
+  }
+
+  .markdown-content dd {
+    margin-left: 2em;
+    margin-bottom: 0.5em;
+    color: #b0b0b0;
+  }
+
+  /* --- KEYBOARD INPUT --- */
+
+  .markdown-content kbd {
+    display: inline-block;
+    padding: 0.2em 0.4em;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+    font-size: 0.85em;
+    color: #e0e0e0;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  /* --- SPECIAL CONTENT --- */
+
+  .markdown-content mark {
+    background-color: rgba(255, 140, 0, 0.3);
+    color: #fff;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+  }
+
+  /* --- NESTED CONTENT FIXES --- */
+
+  /* Fix spacing when combining different elements */
+  .markdown-content ul > li > p:only-child,
+  .markdown-content ol > li > p:only-child {
+    margin: 0;
+  }
+
+  /* Ensure consistent spacing in nested structures */
+  .markdown-content blockquote ul,
+  .markdown-content blockquote ol {
+    margin-top: 0.5em;
+  }
+
+  /* --- PHASE-SPECIFIC STYLING --- */
+
+  /* Add subtle phase indicators */
+  [data-phase="BRAINSTORM"] .markdown-content h2:first-child {
+    color: #4CD964;
+  }
+
+  [data-phase="CRITIQUE"] .markdown-content h2:first-child {
+    color: #FF3B30;
+  }
+
+  [data-phase="REVISE"] .markdown-content h2:first-child {
+    color: #FF8C00;
+  }
+
+  [data-phase="SYNTHESIZE"] .markdown-content h2:first-child {
+    color: #AF52DE;
+  }
+
+  [data-phase="CONSENSUS"] .markdown-content h2:first-child {
+    color: #1E90FF;
+  }
 }
