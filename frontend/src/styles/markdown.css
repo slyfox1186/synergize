@@ -7,14 +7,14 @@
    DESIGN SYSTEM VARIABLES
    ============================================================================ */
 :root {
-  /* Spacing Scale - Consistent vertical rhythm */
-  --md-space-xs: 0.25rem;
-  --md-space-sm: 0.5rem;
-  --md-space-md: 1rem;
-  --md-space-lg: 1.5rem;
-  --md-space-xl: 2rem;
-  --md-space-2xl: 3rem;
-  --md-space-3xl: 4rem;
+  /* Spacing Scale - Reduced for compact display */
+  --md-space-xs: 0.125rem;
+  --md-space-sm: 0.25rem;
+  --md-space-md: 0.5rem;
+  --md-space-lg: 0.75rem;
+  --md-space-xl: 1rem;
+  --md-space-2xl: 1.5rem;
+  --md-space-3xl: 2rem;
   
   /* Typography Scale - Modular scale (1.25 ratio) */
   --md-text-xs: 0.8rem;
@@ -94,32 +94,32 @@
 }
 
 .markdown-content h1 {
-  font-size: var(--md-text-4xl);
+  font-size: var(--md-text-3xl);
   font-weight: 700;
   margin-top: 0;
-  margin-bottom: var(--md-space-xl);
-  padding-bottom: var(--md-space-md);
+  margin-bottom: var(--md-space-md);
+  padding-bottom: var(--md-space-sm);
   border-bottom: 1px solid var(--md-border-color);
   color: var(--md-accent-blue);
 }
 
 .markdown-content h2 {
-  font-size: var(--md-text-3xl);
-  margin-top: var(--md-space-3xl);
-  margin-bottom: var(--md-space-lg);
+  font-size: var(--md-text-2xl);
+  margin-top: var(--md-space-xl);
+  margin-bottom: var(--md-space-md);
   color: var(--md-text-primary);
 }
 
 .markdown-content h3 {
-  font-size: var(--md-text-2xl);
-  margin-top: var(--md-space-2xl);
-  margin-bottom: var(--md-space-md);
+  font-size: var(--md-text-xl);
+  margin-top: var(--md-space-lg);
+  margin-bottom: var(--md-space-sm);
 }
 
 .markdown-content h4 {
-  font-size: var(--md-text-xl);
-  margin-top: var(--md-space-xl);
-  margin-bottom: var(--md-space-md);
+  font-size: var(--md-text-lg);
+  margin-top: var(--md-space-md);
+  margin-bottom: var(--md-space-sm);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--md-text-secondary);
@@ -143,8 +143,8 @@
 /* Paragraphs */
 .markdown-content p {
   margin-top: 0;
-  margin-bottom: var(--md-space-lg);
-  line-height: var(--md-leading-relaxed);
+  margin-bottom: var(--md-space-md);
+  line-height: var(--md-leading-normal);
 }
 
 /* Links - Subtle and professional */

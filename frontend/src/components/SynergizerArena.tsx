@@ -37,8 +37,8 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
   } = useCollaborationStore();
 
   // Container refs for panels
-  const leftPanelRef = useRef<HTMLDivElement>(null);
-  const rightPanelRef = useRef<HTMLDivElement>(null);
+  const leftPanelScrollRef = useRef<HTMLDivElement>(null);
+  const rightPanelScrollRef = useRef<HTMLDivElement>(null);
   const synthesisRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -50,6 +50,9 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
   const [promptInput, setPromptInput] = useState('');
   const [hasScrolledToSynthesis, setHasScrolledToSynthesis] = useState(false);
   const [isSynthesisActive, setIsSynthesisActive] = useState(false);
+  const [userQueries, setUserQueries] = useState<Array<{ id: string; query: string; timestamp: Date }>>([]);
+  const [leftPanelAutoScroll, setLeftPanelAutoScroll] = useState(true);
+  const [rightPanelAutoScroll, setRightPanelAutoScroll] = useState(true);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const beforeUnloadHandlerRef = useRef<((e: BeforeUnloadEvent) => string) | null>(null);
 
@@ -103,16 +106,16 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
   // Auto-resize textarea based on content
   useEffect(() => {
     if (textareaRef.current) {
-      // Reset height to calculate the correct scrollHeight
-      textareaRef.current.style.height = '120px'; // minHeight
+      // Reset height to auto to get proper scrollHeight
+      textareaRef.current.style.height = 'auto';
       
       // Calculate the new height based on scrollHeight
       const scrollHeight = textareaRef.current.scrollHeight;
-      const lineHeight = 24; // Approximate line height in pixels (1.5rem)
-      const maxHeight = lineHeight * 8; // 8 lines max
+      const minHeight = 80; // Match the minHeight in style
+      const maxHeight = 200; // Match the maxHeight in style
       
-      // Set the new height, capped at maxHeight
-      const newHeight = Math.min(scrollHeight, maxHeight);
+      // Set the new height, respecting min and max
+      const newHeight = Math.max(minHeight, Math.min(scrollHeight, maxHeight));
       textareaRef.current.style.height = `${newHeight}px`;
     }
   }, [promptInput]);
@@ -147,6 +150,43 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
     }
   }, [hasScrolledToSynthesis, isSynthesisActive]);
 
+  // Handle manual scroll to detect when user wants to disengage autoscroll
+  const handlePanelScroll = useCallback((panelType: 'left' | 'right'): React.UIEventHandler<HTMLDivElement> => {
+    return (event: React.UIEvent<HTMLDivElement>): void => {
+      const container = event.currentTarget;
+      const scrollHeight = container.scrollHeight;
+      const scrollTop = container.scrollTop;
+      const clientHeight = container.clientHeight;
+      const isAtBottom = Math.abs(scrollHeight - scrollTop - clientHeight) < 5;
+      
+      logger.info(`🔵 SCROLL EVENT ${panelType}`, {
+        scrollHeight,
+        scrollTop,
+        clientHeight,
+        isAtBottom,
+        currentAutoScroll: panelType === 'left' ? leftPanelAutoScroll : rightPanelAutoScroll
+      });
+      
+      // If user scrolled up (not at bottom), disengage autoscroll
+      if (!isAtBottom) {
+        logger.info(`🔴 DISENGAGING AUTOSCROLL ${panelType}`);
+        if (panelType === 'left') {
+          setLeftPanelAutoScroll(false);
+        } else {
+          setRightPanelAutoScroll(false);
+        }
+      } else {
+        // Re-engage autoscroll when manually scrolled to bottom
+        logger.info(`🟢 RE-ENGAGING AUTOSCROLL ${panelType}`);
+        if (panelType === 'left') {
+          setLeftPanelAutoScroll(true);
+        } else {
+          setRightPanelAutoScroll(true);
+        }
+      }
+    };
+  }, [leftPanelAutoScroll, rightPanelAutoScroll]);
+
   // Simple token processing - just updates state and scrolls after DOM update
   const processTokens = useCallback((chunk: TokenChunk): void => {
     // Allow completion signals to pass through, but ignore empty non-completion chunks
@@ -161,16 +201,16 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
     // Double RAF to ensure React has completed render cycle
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        if (chunk.modelId === selectedModels?.[0] && leftPanelRef.current) {
-          const container = leftPanelRef.current;
-          container.scrollTop = container.scrollHeight;
-        } else if (chunk.modelId === selectedModels?.[1] && rightPanelRef.current) {
-          const container = rightPanelRef.current;
-          container.scrollTop = container.scrollHeight;
+        if (chunk.modelId === selectedModels?.[0] && leftPanelScrollRef.current && leftPanelAutoScroll) {
+          // Scroll the container directly
+          leftPanelScrollRef.current.scrollTop = leftPanelScrollRef.current.scrollHeight;
+        } else if (chunk.modelId === selectedModels?.[1] && rightPanelScrollRef.current && rightPanelAutoScroll) {
+          // Scroll the container directly
+          rightPanelScrollRef.current.scrollTop = rightPanelScrollRef.current.scrollHeight;
         }
       });
     });
-  }, [streamManager, selectedModels]);
+  }, [streamManager, selectedModels, leftPanelAutoScroll, rightPanelAutoScroll]);
 
   const handleSSEMessage = useCallback((message: SSEMessage) => {
     // Remove beforeunload warning when collaboration completes
@@ -306,6 +346,17 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
       setPrompt(promptInput);
       setStreaming(true);
 
+      // Add query to history
+      const newQuery = {
+        id: crypto.randomUUID(),
+        query: promptInput,
+        timestamp: new Date()
+      };
+      setUserQueries(prev => [...prev, newQuery]);
+      
+      // Clear the input
+      setPromptInput('');
+
       const sessionId = crypto.randomUUID();
       const requestBody = {
         prompt: promptInput,
@@ -348,88 +399,111 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
   return (
     <div className="flex flex-col h-full">
       {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto space-y-4 pb-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="space-y-4">
+          {/* User Query History */}
+          {userQueries.length > 0 && (
+            <>
+              {userQueries.map((query) => (
+                <div key={query.id} className="model-panel relative">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-synergy-accent font-tech text-sm uppercase">User Query</h3>
+                    <span className="text-synergy-muted text-xs">
+                      {query.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div className="p-4 bg-synergy-darker rounded">
+                    <MathAwareRenderer
+                      content={query.query}
+                      phase={CollaborationPhase.IDLE}
+                      modelId="user"
+                    />
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
 
-      {/* Processing Indicator - Centered */}
-      {isStreaming && (
-        <div className="text-center py-8">
-          <p className="text-synergy-accent font-tech uppercase tracking-wider mb-4">Processing...</p>
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-synergy-primary"></div>
-        </div>
-      )}
-
-      {/* Model Response Panels */}
-      <SynchronizedResizablePanels
+          {/* Model Response Panels */}
+          <SynchronizedResizablePanels
         leftPanel={{
           title: models.find(m => m.id === selectedModels?.[0])?.name || selectedModels?.[0] || 'Model 1',
           content: (
-            <div ref={leftPanelRef} className="h-full overflow-y-auto overflow-x-hidden scroll-smooth p-4 pb-6">
-              {((): JSX.Element[] => {
-                const entries = Array.from(streamContents.entries());
-                const filtered = entries.filter(([key]) => selectedModels && key.endsWith(`-${selectedModels[0]}`));
-                
-                logger.info('LEFT PANEL RENDER', {
-                  totalEntries: entries.length,
-                  filteredEntries: filtered.length,
-                  keys: entries.map(([k]) => k),
-                  selectedModel: selectedModels?.[0]
-                });
-                
-                return filtered.map(([key, content]): JSX.Element => (
-                  <MathAwareRenderer
-                    key={key}
-                    content={content.content}
-                    phase={content.phase}
-                    modelId={content.modelId}
-                    className="mb-4"
-                  />
-                ));
-              })()}
+            <div className="h-full">
+              <div className="p-4 pb-8">
+                {((): JSX.Element[] => {
+                  const entries = Array.from(streamContents.entries());
+                  const filtered = entries.filter(([key]) => selectedModels && key.endsWith(`-${selectedModels[0]}`));
+                  
+                  logger.info('LEFT PANEL RENDER', {
+                    totalEntries: entries.length,
+                    filteredEntries: filtered.length,
+                    keys: entries.map(([k]) => k),
+                    selectedModel: selectedModels?.[0]
+                  });
+                  
+                  return filtered.map(([key, content]): JSX.Element => (
+                    <MathAwareRenderer
+                      key={key}
+                      content={content.content}
+                      phase={content.phase}
+                      modelId={content.modelId}
+                      className="mb-4"
+                    />
+                  ));
+                })()}
+              </div>
             </div>
           ),
           onCopy: () => handleCopyContent(selectedModels?.[0] || '', 'Left Panel'),
+          onScroll: handlePanelScroll('left'),
+          scrollRef: leftPanelScrollRef,
         }}
         rightPanel={{
           title: models.find(m => m.id === selectedModels?.[1])?.name || selectedModels?.[1] || 'Model 2',
           content: (
-            <div ref={rightPanelRef} className="h-full overflow-y-auto overflow-x-hidden scroll-smooth p-4 pb-8">
-              {((): JSX.Element[] => {
-                const entries = Array.from(streamContents.entries());
-                const filtered = entries.filter(([key]) => selectedModels && key.endsWith(`-${selectedModels[1]}`));
-                
-                logger.error('🟡 RIGHT PANEL RENDER', {
-                  totalEntries: entries.length,
-                  filteredEntries: filtered.length,
-                  keys: entries.map(([k]) => k),
-                  selectedModel: selectedModels?.[1],
-                  contentLengths: filtered.map(([k, c]) => ({ 
-                    key: k, 
-                    len: c.content.length,
-                    first20: c.content.substring(0, 20),
-                    last20: c.content.slice(-20)
-                  }))
-                });
-                
-                // Check if content is actually there
-                filtered.forEach(([key, content]): void => {
-                  if (!content.content) {
-                    logger.error('🔴 EMPTY CONTENT IN RENDER', { key });
-                  }
-                });
-                
-                return filtered.map(([key, content]): JSX.Element => (
-                  <MathAwareRenderer
-                    key={key}
-                    content={content.content}
-                    phase={content.phase}
-                    modelId={content.modelId}
-                    className="mb-4"
-                  />
-                ));
-              })()}
+            <div className="h-full">
+              <div className="p-4 pb-8">
+                {((): JSX.Element[] => {
+                  const entries = Array.from(streamContents.entries());
+                  const filtered = entries.filter(([key]) => selectedModels && key.endsWith(`-${selectedModels[1]}`));
+                  
+                  logger.error('🟡 RIGHT PANEL RENDER', {
+                    totalEntries: entries.length,
+                    filteredEntries: filtered.length,
+                    keys: entries.map(([k]) => k),
+                    selectedModel: selectedModels?.[1],
+                    contentLengths: filtered.map(([k, c]) => ({ 
+                      key: k, 
+                      len: c.content.length,
+                      first20: c.content.substring(0, 20),
+                      last20: c.content.slice(-20)
+                    }))
+                  });
+                  
+                  // Check if content is actually there
+                  filtered.forEach(([key, content]): void => {
+                    if (!content.content) {
+                      logger.error('🔴 EMPTY CONTENT IN RENDER', { key });
+                    }
+                  });
+                  
+                  return filtered.map(([key, content]): JSX.Element => (
+                    <MathAwareRenderer
+                      key={key}
+                      content={content.content}
+                      phase={content.phase}
+                      modelId={content.modelId}
+                      className="mb-4"
+                    />
+                  ));
+                })()}
+              </div>
             </div>
           ),
           onCopy: () => handleCopyContent(selectedModels?.[1] || '', 'Right Panel'),
+          onScroll: handlePanelScroll('right'),
+          scrollRef: rightPanelScrollRef,
         }}
       />
 
@@ -450,7 +524,7 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
             </div>
             <div 
               ref={synthesisRef}
-              className="min-h-[200px] p-4 bg-synergy-darker rounded overflow-y-auto"
+              className="min-h-[150px] max-h-[300px] p-4 bg-synergy-darker rounded overflow-y-auto"
             >
               {Array.from(streamContents.entries())
                 .filter(([key]) => key.includes('-synthesis'))
@@ -464,10 +538,11 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Fixed bottom input area */}
-      <div className="border-t border-synergy-primary/20 bg-synergy-darker/90 backdrop-blur-sm p-4">
+      <div className="flex-shrink-0 border-t border-synergy-primary/20 bg-synergy-darker/90 backdrop-blur-sm p-4">
         <div className="max-w-4xl mx-auto space-y-3">
           <div className="relative">
             <textarea

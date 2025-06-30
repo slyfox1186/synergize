@@ -8,6 +8,8 @@ interface SynchronizedResizablePanelsProps {
     onFocus?: () => void;
     onResizeStart?: () => void;
     onResizeEnd?: () => void;
+    onScroll?: React.UIEventHandler<HTMLDivElement>;
+    scrollRef?: React.RefObject<HTMLDivElement>;
   };
   rightPanel: {
     title: string;
@@ -16,6 +18,8 @@ interface SynchronizedResizablePanelsProps {
     onFocus?: () => void;
     onResizeStart?: () => void;
     onResizeEnd?: () => void;
+    onScroll?: React.UIEventHandler<HTMLDivElement>;
+    scrollRef?: React.RefObject<HTMLDivElement>;
   };
   minHeight?: number;
   maxHeight?: number;
@@ -26,15 +30,15 @@ export function SynchronizedResizablePanels({
   leftPanel,
   rightPanel,
   minHeight = 200,
-  maxHeight = 960,
-  defaultHeight = 480
+  maxHeight = 600,
+  defaultHeight = 300
 }: SynchronizedResizablePanelsProps): JSX.Element {
   const [height, setHeight] = useState(defaultHeight);
   const [isResizing, setIsResizing] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
-  const previousHeightRef = useRef(480);
+  const previousHeightRef = useRef(300);
 
   const handleDoubleClick = useCallback(() => {
     if (isMaximized) {
@@ -114,10 +118,12 @@ export function SynchronizedResizablePanels({
         </div>
         <div className="relative">
           <div 
+            ref={leftPanel.scrollRef}
             style={{ height: `${height}px` }}
-            className="overflow-hidden bg-synergy-darker rounded"
+            className="overflow-y-auto overflow-x-hidden bg-synergy-darker rounded"
             onClick={leftPanel.onFocus}
             onFocus={leftPanel.onFocus}
+            onScroll={leftPanel.onScroll}
             tabIndex={0}
           >
             <div className="h-full">
@@ -148,10 +154,12 @@ export function SynchronizedResizablePanels({
         </div>
         <div className="relative">
           <div 
+            ref={rightPanel.scrollRef}
             style={{ height: `${height}px` }}
-            className="overflow-hidden bg-synergy-darker rounded"
+            className="overflow-y-auto overflow-x-hidden bg-synergy-darker rounded"
             onClick={rightPanel.onFocus}
             onFocus={rightPanel.onFocus}
+            onScroll={rightPanel.onScroll}
             tabIndex={0}
           >
             <div className="h-full">
