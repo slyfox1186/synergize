@@ -171,18 +171,34 @@ export class ConversationStateManager {
     // Store the turn
     await this.saveTurn(turn);
     
-    // Store in vector database for semantic retrieval
-    await this.vectorStore.storeDocument(
-      turn.id,
-      content,
-      {
+    // Store in vector database for semantic retrieval (with validation)
+    if (content && content.trim().length > 0) {
+      await this.vectorStore.storeDocument(
+        turn.id,
+        content,
+        {
+          sessionId,
+          phase: state.currentPhase,
+          modelId,
+          timestamp: turn.timestamp,
+          tokens: turn.metadata.tokenCount
+        }
+      );
+      this.logger.debug(`📄 Stored vector document for turn ${turn.id}`, {
+        contentLength: content.length,
         sessionId,
-        phase: state.currentPhase,
         modelId,
-        timestamp: turn.timestamp,
-        tokens: turn.metadata.tokenCount
-      }
-    );
+        phase: state.currentPhase
+      });
+    } else {
+      this.logger.warn(`⚠️ SKIPPED storing empty content for turn ${turn.id}`, {
+        contentLength: content?.length || 0,
+        sessionId,
+        modelId,
+        phase: state.currentPhase,
+        turnNumber: turn.turnNumber
+      });
+    }
 
     // Update conversation state
     state.turns.push(turn);
@@ -732,12 +748,20 @@ export class ConversationStateManager {
           30 // Get 30 candidates for re-ranking
         );
         
+        this.logger.info(`🔍 Vector search found ${candidateResults.length} candidates for sessionId ${sessionId}`);
+        if (candidateResults.length === 0) {
+          this.logger.warn(`❌ ZERO vector search results for query: "${enhancedQuery.substring(0, 100)}..."`);
+          this.logger.warn(`❌ Search filters: sessionId=${sessionId}`);
+        }
+        
         // Fetch full turn data
         const candidateTurns: ConversationTurn[] = [];
         for (const result of candidateResults) {
           const turn = await this.getTurn(result.id);
           if (turn) candidateTurns.push(turn);
         }
+        
+        this.logger.info(`🔍 Successfully retrieved ${candidateTurns.length} full turn objects`)
         
         // Step 3: Re-rank using LLM intelligence
         const rankedDocs = await this.llmAnalytics.rerankDocuments(
@@ -843,22 +867,22 @@ export class ConversationStateManager {
     // Priority 1: Essential overview (always include)
     const overviewParts = [
       `## Conversation Overview`,
-      `**Original Query:** ${state.originalQuery}`,
-      `**Current Phase:** ${state.currentPhase}`,
-      `**Turn:** ${state.turns.length + 1}`,
+      `Original Query: ${state.originalQuery}`,
+      `Current Phase: ${state.currentPhase}`,
+      `Turn: ${state.turns.length + 1}`,
       ``
     ];
     sections.push({ content: overviewParts.join('\n'), priority: 1 });
 
     // Priority 2: Immediate context (partner's last response)
     if (otherModelLastTurn) {
-      const partnerResponse = `## Partner's Last Response\n**${otherModelLastTurn.modelId}:** ${otherModelLastTurn.content}\n\n`;
+      const partnerResponse = `## Partner's Last Response\n${otherModelLastTurn.modelId}: ${otherModelLastTurn.content}\n\n`;
       sections.push({ content: partnerResponse, priority: 2 });
     }
 
     // Priority 3: Own last response
     if (myLastTurn) {
-      const myResponse = `## Your Last Response\n**You:** ${myLastTurn.content}\n\n`;
+      const myResponse = `## Your Last Response\nYou: ${myLastTurn.content}\n\n`;
       sections.push({ content: myResponse, priority: 3 });
     }
 
@@ -873,7 +897,7 @@ export class ConversationStateManager {
     if (relevantHistory.length > 0) {
       const historyParts = [`## Relevant Previous Discussion`];
       for (const turn of relevantHistory) {
-        historyParts.push(`**${turn.modelId} (${turn.phase}):** ${turn.content}`);
+        historyParts.push(`${turn.modelId} (${turn.phase}): ${turn.content}`);
         historyParts.push(``); // Empty line between turns
       }
       sections.push({ content: historyParts.join('\n'), priority: 5 });
@@ -927,19 +951,21 @@ export class ConversationStateManager {
 OBJECTIVE: Independently verify the final answer for absolute correctness. The final output must be factually, logically, and (if applicable) mathematically sound. An incorrect answer is a critical failure.
 
 YOUR PROCESS:
-1. **INDEPENDENT RE-SOLVE:** Without referencing your prior answer, solve the original query from first principles. Show all critical reasoning steps.
-2. **CRITICAL AUDIT:** Scrutinize your partner's (${otherModelId}) final proposed answer and their reasoning.
+1. INDEPENDENT RE-SOLVE: Without referencing your prior answer, solve the original query from first principles. Show all critical reasoning steps.
+2. CRITICAL AUDIT: Scrutinize your partner's (${otherModelId}) final proposed answer and their reasoning.
    - For math/logic: Re-calculate every step.
    - For facts: Cross-verify against known information.
    - For reasoning: Challenge every assumption and logical leap.
-3. **CONVERGE or CORRECT:**
+3. CONVERGE or CORRECT:
    - If both independent solutions match and are verified correct, state the final answer and the core reasoning.
    - If there is a discrepancy, clearly state YOUR verified answer and provide a step-by-step proof explaining why it is correct and where the other model's reasoning failed.
-4. **FINAL OUTPUT FORMAT:** "My final verified answer is [Answer]. Justification: [Provide a concise but complete proof/reasoning]."
+4. FINAL OUTPUT FORMAT: "My final verified answer is [Answer]. Justification: [Provide a concise but complete proof/reasoning]."
 
 PRIORITY: Objective Truth > Previous Statements > Agreement.`;
     }
-    return `${modelId} working with ${otherModelId}: ${PHASE_INSTRUCTIONS[phase]} Focus on correctness above all else.`;
+    return `${modelId} working with ${otherModelId}: ${PHASE_INSTRUCTIONS[phase]} 
+
+CRITICAL: Trust your verified calculations! If both models reach the same answer through valid reasoning, that's SUCCESS - advocate for jumping to CONSENSUS immediately. Don't manufacture doubt where none exists.`;
   }
 
   private buildCurrentTurnPrompt(state: ConversationState, modelId: string): string {
@@ -966,9 +992,9 @@ Final format: "My final verified answer is [X]. Justification: [proof]"`;
     }
     
     if (turnCount === 0) {
-      return `Begin ${state.currentPhase} phase for: "${state.originalQuery}"`;
+      return `Begin ${state.currentPhase} phase for: "${state.originalQuery}"\n\nIf you reach a verified answer with high confidence, advocate for jumping to CONSENSUS!`;
     } else {
-      return `Continue ${state.currentPhase} - respond thoughtfully to partner's points.`;
+      return `Continue ${state.currentPhase}.\n\nIMPORTANT: If you and your partner agree on the verified answer, be CONFIDENT! Suggest jumping directly to CONSENSUS. Don't create artificial doubt or unnecessary complexity.`;
     }
   }
 
@@ -976,15 +1002,15 @@ Final format: "My final verified answer is [X]. Justification: [proof]"`;
     const parts: string[] = [];
     
     if (context.agreements.length > 0) {
-      parts.push(`**Agreements:** ${context.agreements.slice(-3).join('; ')}`);
+      parts.push(`Agreements: ${context.agreements.slice(-3).join('; ')}`);
     }
     
     if (context.keyPoints.length > 0) {
-      parts.push(`**Key Points:** ${context.keyPoints.slice(-5).join('; ')}`);
+      parts.push(`Key Points: ${context.keyPoints.slice(-5).join('; ')}`);
     }
     
     if (context.disagreements.length > 0) {
-      parts.push(`**Areas of Tension:** ${context.disagreements.slice(-2).join('; ')}`);
+      parts.push(`Areas of Tension: ${context.disagreements.slice(-2).join('; ')}`);
     }
 
     return parts.join('\n');

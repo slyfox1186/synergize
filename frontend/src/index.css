@@ -7,6 +7,8 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    height: 100%;
+    overflow: hidden;
   }
   
   body {
@@ -14,8 +16,15 @@
     /* PREMIUM ELECTRIC BLUE & ORANGE DARK THEME */
     background: #121212; /* Rich charcoal base */
     position: relative;
-    overflow-x: hidden;
-    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  #root {
+    height: 100%;
+    overflow: hidden;
   }
   
   /* SOPHISTICATED DEPTH LAYER SYSTEM */
@@ -175,10 +184,13 @@
   }
   
   .synergy-button {
-    @apply px-6 py-3 bg-synergy-dark text-synergy-text font-tech uppercase tracking-wider rounded;
+    @apply px-6 py-3 bg-synergy-dark text-synergy-text font-tech uppercase tracking-wider rounded text-center;
     background: linear-gradient(135deg, rgba(30, 144, 255, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%);
     border: 1px solid rgba(30, 144, 255, 0.3);
     transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .synergy-button:hover {
@@ -215,7 +227,7 @@
   }
   
   .model-panel {
-    @apply rounded-lg p-6 transition-all;
+    @apply rounded-lg p-4 transition-all;
     background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(18, 18, 18, 0.9) 100%);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(30, 144, 255, 0.15);

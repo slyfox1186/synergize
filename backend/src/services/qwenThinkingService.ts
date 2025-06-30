@@ -301,6 +301,15 @@ export class QwenThinkingService {
           const tokenText = context.model.detokenize(tokens, false);
           
           if (tokenText) {
+            // CRITICAL: Filter out stop tokens to prevent HTML rendering issues
+            const modelConfig = this.modelService.getModelConfig(this.qwenModelId);
+            if (modelConfig && PromptFormatter.isStopToken(modelConfig, tokenText)) {
+              this.logger.debug('Filtered stop token from Qwen thinking stream', {
+                stopToken: tokenText
+              });
+              return; // Skip streaming stop tokens
+            }
+            
             tokenCount += tokens.length;
             
             // Stream the token if enabled

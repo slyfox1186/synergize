@@ -189,26 +189,13 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
       
       // Check if this is synthesis content
       if (chunk.modelId === 'synthesis') {
-        // Mark synthesis as active and trigger scroll on first synthesis token
-        if (!isSynthesisActive && chunk.tokens.length > 0) {
+        // Mark synthesis as active and trigger scroll on first synthesis token OR first empty activation signal
+        if (!isSynthesisActive) {
           setIsSynthesisActive(true);
         }
         if (!hasScrolledToSynthesis && chunk.tokens.length > 0) {
           scrollToSynthesis();
         }
-      }
-    } else if (message.type === SSEMessageType.SYNTHESIS_UPDATE && isTokenChunk(message.payload)) {
-      const chunk = message.payload;
-      
-      // Process tokens with proper scrolling
-      processTokens(chunk);
-      
-      // Mark synthesis as active and trigger scroll for SYNTHESIS_UPDATE messages
-      if (!isSynthesisActive && chunk.tokens.length > 0) {
-        setIsSynthesisActive(true);
-      }
-      if (!hasScrolledToSynthesis && chunk.tokens.length > 0) {
-        scrollToSynthesis();
       }
     }
   }, [processTokens, hasScrolledToSynthesis, isSynthesisActive, scrollToSynthesis]);
@@ -359,60 +346,24 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Prompt Input */}
-      <div className="space-y-4">
-        <div className="relative">
-          <textarea
-            ref={textareaRef}
-            value={promptInput}
-            onChange={(e) => setPromptInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter your prompt here... (Press Enter to submit, Shift+Enter for new line)"
-            className="synergy-input resize-none overflow-y-auto transition-height duration-150"
-            style={{
-              minHeight: '120px',
-              lineHeight: '1.5rem'
-            }}
-            disabled={isStreaming}
-          />
-          {/* Copy button */}
-          {promptInput.trim() && (
-            <button
-              onClick={handleCopyPrompt}
-              className="absolute top-2 right-2 text-synergy-accent hover:text-synergy-primary transition-colors p-1.5 rounded opacity-75 hover:opacity-100"
-              title="Copy prompt to clipboard"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </button>
-          )}
-          {/* Line counter */}
-          <div className="absolute bottom-2 right-2 text-synergy-muted text-xs opacity-50">
-            {promptInput.length > 0 && `${promptInput.split('\n').length} line${promptInput.split('\n').length !== 1 ? 's' : ''}`}
-          </div>
+    <div className="flex flex-col h-full">
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto space-y-4 pb-4">
+
+      {/* Processing Indicator - Centered */}
+      {isStreaming && (
+        <div className="text-center py-8">
+          <p className="text-synergy-accent font-tech uppercase tracking-wider mb-4">Processing...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-synergy-primary"></div>
         </div>
-        <div className="flex items-center justify-between">
-          <button
-            onClick={handleSubmit}
-            disabled={isStreaming || !promptInput.trim()}
-            className="synergy-button disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isStreaming ? 'Processing...' : 'Initiate Collaboration'}
-          </button>
-          <span className="text-synergy-muted text-sm">
-            Press <kbd className="px-2 py-1 text-xs bg-synergy-dark rounded border border-synergy-muted/30">Enter</kbd> to submit
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* Model Response Panels */}
       <SynchronizedResizablePanels
         leftPanel={{
           title: models.find(m => m.id === selectedModels?.[0])?.name || selectedModels?.[0] || 'Model 1',
           content: (
-            <div ref={leftPanelRef} className="h-full overflow-y-auto overflow-x-hidden scroll-smooth p-4 pb-8">
+            <div ref={leftPanelRef} className="h-full overflow-y-auto overflow-x-hidden scroll-smooth p-4 pb-6">
               {((): JSX.Element[] => {
                 const entries = Array.from(streamContents.entries());
                 const filtered = entries.filter(([key]) => selectedModels && key.endsWith(`-${selectedModels[0]}`));
@@ -482,37 +433,87 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
         }}
       />
 
-      {/* Synthesis Panel - Only show when synthesis is active */}
-      {isSynthesisActive && (
-        <div className="model-panel relative">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-synergy-accent font-tech">Synthesis</h3>
-            <button
-              onClick={() => handleCopy(synthesisRef, 'Synthesis')}
-              className="text-synergy-accent hover:text-synergy-primary transition-colors p-2"
-              title="Copy to clipboard"
+        {/* Synthesis Panel - Only show when synthesis is active */}
+        {isSynthesisActive && (
+          <div className="model-panel relative">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-synergy-accent font-tech">Synthesis</h3>
+              <button
+                onClick={() => handleCopy(synthesisRef, 'Synthesis')}
+                className="text-synergy-accent hover:text-synergy-primary transition-colors p-2"
+                title="Copy to clipboard"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </button>
+            </div>
+            <div 
+              ref={synthesisRef}
+              className="min-h-[200px] p-4 bg-synergy-darker rounded overflow-y-auto"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </button>
+              {Array.from(streamContents.entries())
+                .filter(([key]) => key.includes('-synthesis'))
+                .map(([key, content]) => (
+                  <SynthesisMathRenderer
+                    key={key}
+                    content={content.content}
+                    className="mb-4"
+                  />
+                ))}
+            </div>
           </div>
-          <div 
-            ref={synthesisRef}
-            className="min-h-[200px] p-4 bg-synergy-darker rounded overflow-y-auto"
-          >
-            {Array.from(streamContents.entries())
-              .filter(([key]) => key.includes('-synthesis'))
-              .map(([key, content]) => (
-                <SynthesisMathRenderer
-                  key={key}
-                  content={content.content}
-                  className="mb-4"
-                />
-              ))}
+        )}
+      </div>
+
+      {/* Fixed bottom input area */}
+      <div className="border-t border-synergy-primary/20 bg-synergy-darker/90 backdrop-blur-sm p-4">
+        <div className="max-w-4xl mx-auto space-y-3">
+          <div className="relative">
+            <textarea
+              ref={textareaRef}
+              value={promptInput}
+              onChange={(e) => setPromptInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Enter your prompt here... (Press Enter to submit, Shift+Enter for new line)"
+              className="synergy-input resize-none overflow-y-auto transition-height duration-150 w-full"
+              style={{
+                minHeight: '80px',
+                maxHeight: '200px',
+                lineHeight: '1.5rem'
+              }}
+              disabled={isStreaming}
+            />
+            {/* Copy button */}
+            {promptInput.trim() && (
+              <button
+                onClick={handleCopyPrompt}
+                className="absolute top-2 right-2 text-synergy-accent hover:text-synergy-primary transition-colors p-1.5 rounded opacity-75 hover:opacity-100"
+                title="Copy prompt to clipboard"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </button>
+            )}
+            {/* Line counter */}
+            <div className="absolute bottom-2 right-2 text-synergy-muted text-xs opacity-50">
+              {promptInput.length > 0 && `${promptInput.split('\n').length} line${promptInput.split('\n').length !== 1 ? 's' : ''}`}
+            </div>
           </div>
+          {!isStreaming && (
+            <div className="flex justify-center">
+              <button
+                onClick={handleSubmit}
+                disabled={!promptInput.trim()}
+                className="synergy-button disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Initiate Collaboration
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -16,4 +16,5 @@ tmp/
 .nyc_output/
 .vscode/
 .idea/
-*.tsbuildinfo 
+*.tsbuildinfo
+backend/src/test-redis-vectors.ts 

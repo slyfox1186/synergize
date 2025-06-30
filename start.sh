@@ -75,6 +75,14 @@ fi
 echo "🧹 Cleaning old build artifacts..."
 rm -rf dist frontend/dist backend/dist
 
+# Clear the redis memory
+if ! redis-cli FLUSHALL; then
+    echo "Failed to execute 'redis-cli FLUSHALL'."
+    exit 1
+else
+    echo "The Redis Memory was successfully cleared."
+fi
+
 # Handle --prod flag
 if [ "$PROD_MODE" = true ]; then
     echo "🔨 Building optimized production bundle..."

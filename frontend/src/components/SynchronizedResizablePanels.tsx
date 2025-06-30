@@ -26,15 +26,15 @@ export function SynchronizedResizablePanels({
   leftPanel,
   rightPanel,
   minHeight = 200,
-  maxHeight = 800,
-  defaultHeight = 400
+  maxHeight = 960,
+  defaultHeight = 480
 }: SynchronizedResizablePanelsProps): JSX.Element {
   const [height, setHeight] = useState(defaultHeight);
   const [isResizing, setIsResizing] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
-  const previousHeightRef = useRef(defaultHeight);
+  const previousHeightRef = useRef(480);
 
   const handleDoubleClick = useCallback(() => {
     if (isMaximized) {
@@ -97,7 +97,7 @@ export function SynchronizedResizablePanels({
   `;
 
   return (
-    <div className="grid grid-cols-2 gap-6">
+    <div className="grid grid-cols-2 gap-4">
       {/* Left Model Panel */}
       <div className="model-panel relative">
         <div className="flex justify-between items-center mb-4">

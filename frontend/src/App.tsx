@@ -248,10 +248,10 @@ function App(): JSX.Element {
   }, [sseService]);
 
   return (
-    <div className="min-h-screen bg-synergy-darker">
+    <div className="h-screen bg-synergy-darker flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="border-b border-synergy-primary/20 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+      <header className="border-b border-synergy-primary/20 backdrop-blur-sm flex-shrink-0 z-50">
+        <div className="container mx-auto px-6 py-4" style={{ maxWidth: '85vw' }}>
           <div className="flex items-center justify-between">
             <h1 className="rainbow-text font-tech font-bold">
               SYNERGIZE
@@ -264,22 +264,26 @@ function App(): JSX.Element {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {error && (
-          <div className="mb-6 p-4 bg-red-900/20 border border-red-500/50 rounded-lg text-red-400">
-            {error}
-          </div>
-        )}
+      {/* Main Content - Flex grow to fill remaining space */}
+      <main className="flex-1 overflow-hidden">
+        <div className="h-full container mx-auto px-6 py-8" style={{ maxWidth: '85vw' }}>
+          {error && (
+            <div className="mb-6 p-4 bg-red-900/20 border border-red-500/50 rounded-lg text-red-400">
+              {error}
+            </div>
+          )}
 
-        {!models.length ? (
-          <div className="text-center py-20">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-synergy-primary"></div>
-            <p className="mt-4 text-synergy-muted">Loading models...</p>
-          </div>
-        ) : (
-          <SynergizerArena sseService={sseService} />
-        )}
+          {!models.length ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-synergy-primary"></div>
+                <p className="mt-4 text-synergy-muted">Loading models...</p>
+              </div>
+            </div>
+          ) : (
+            <SynergizerArena sseService={sseService} />
+          )}
+        </div>
       </main>
     </div>
   );
