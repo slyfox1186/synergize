@@ -1,84 +1,18 @@
 /* ============================================================================
-   SYNERGIZE MARKDOWN - Professional Dark Theme
-   Clean, modern typography with excellent readability
+   SYNERGIZE MARKDOWN - Clean, Compact Dark Theme
    ============================================================================ */
 
-/* ============================================================================
-   DESIGN SYSTEM VARIABLES
-   ============================================================================ */
-:root {
-  /* Spacing Scale - Reduced for compact display */
-  --md-space-xs: 0.125rem;
-  --md-space-sm: 0.25rem;
-  --md-space-md: 0.5rem;
-  --md-space-lg: 0.75rem;
-  --md-space-xl: 1rem;
-  --md-space-2xl: 1.5rem;
-  --md-space-3xl: 2rem;
-  
-  /* Typography Scale - Modular scale (1.25 ratio) */
-  --md-text-xs: 0.8rem;
-  --md-text-sm: 0.875rem;
-  --md-text-base: 1rem;
-  --md-text-lg: 1.125rem;
-  --md-text-xl: 1.25rem;
-  --md-text-2xl: 1.5rem;
-  --md-text-3xl: 1.875rem;
-  --md-text-4xl: 2.25rem;
-  --md-text-5xl: 2.75rem;
-  
-  /* Line Heights */
-  --md-leading-tight: 1.25;
-  --md-leading-snug: 1.375;
-  --md-leading-normal: 1.5;
-  --md-leading-relaxed: 1.625;
-  --md-leading-loose: 1.75;
-  
-  /* Dark Theme Colors */
-  --md-bg-primary: #0a0a0a;
-  --md-bg-secondary: #141414;
-  --md-bg-tertiary: #1a1a1a;
-  --md-bg-code: #0d1117;
-  --md-bg-accent: rgba(30, 144, 255, 0.05);
-  
-  /* Text Colors */
-  --md-text-primary: #e6e6e6;
-  --md-text-secondary: #b3b3b3;
-  --md-text-muted: #808080;
-  --md-text-code: #79c0ff;
-  
-  /* Accent Colors */
-  --md-accent-blue: #1E90FF;
-  --md-accent-orange: #FF8C00;
-  --md-accent-green: #4CD964;
-  --md-accent-purple: #AF52DE;
-  
-  /* Borders */
-  --md-border-color: rgba(255, 255, 255, 0.1);
-  --md-border-radius: 0.375rem;
-}
-
-/* ============================================================================
-   BASE CONTAINER
-   ============================================================================ */
 .markdown-content {
-  color: var(--md-text-primary);
-  font-size: var(--md-text-base);
-  line-height: var(--md-leading-relaxed);
+  color: #e6e6e6;
+  font-size: 0.9rem;
+  line-height: 1.6;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  max-width: 100%;
-  word-wrap: break-word;
 }
 
-/* ============================================================================
-   TYPOGRAPHY - Professional Hierarchy
-   ============================================================================ */
-
-/* Headings - Clean and well-spaced */
+/* Headings */
 .markdown-content h1,
 .markdown-content h2,
 .markdown-content h3,
@@ -86,406 +20,184 @@
 .markdown-content h5,
 .markdown-content h6 {
   font-weight: 600;
-  line-height: var(--md-leading-tight);
-  margin-top: var(--md-space-2xl);
-  margin-bottom: var(--md-space-lg);
-  color: var(--md-text-primary);
-  position: relative;
+  line-height: 1.25;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  color: #1E90FF;
 }
 
-.markdown-content h1 {
-  font-size: var(--md-text-3xl);
-  font-weight: 700;
-  margin-top: 0;
-  margin-bottom: var(--md-space-md);
-  padding-bottom: var(--md-space-sm);
-  border-bottom: 1px solid var(--md-border-color);
-  color: var(--md-accent-blue);
-}
-
-.markdown-content h2 {
-  font-size: var(--md-text-2xl);
-  margin-top: var(--md-space-xl);
-  margin-bottom: var(--md-space-md);
-  color: var(--md-text-primary);
-}
-
-.markdown-content h3 {
-  font-size: var(--md-text-xl);
-  margin-top: var(--md-space-lg);
-  margin-bottom: var(--md-space-sm);
-}
-
-.markdown-content h4 {
-  font-size: var(--md-text-lg);
-  margin-top: var(--md-space-md);
-  margin-bottom: var(--md-space-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--md-text-secondary);
-}
-
-.markdown-content h5 {
-  font-size: var(--md-text-lg);
-  margin-top: var(--md-space-lg);
-  margin-bottom: var(--md-space-sm);
-  color: var(--md-text-secondary);
-}
-
-.markdown-content h6 {
-  font-size: var(--md-text-base);
-  margin-top: var(--md-space-lg);
-  margin-bottom: var(--md-space-sm);
-  color: var(--md-text-muted);
-  font-weight: 500;
-}
+.markdown-content h1 { font-size: 1.5rem; }
+.markdown-content h2 { font-size: 1.3rem; }
+.markdown-content h3 { font-size: 1.1rem; }
+.markdown-content h4 { font-size: 1rem; }
+.markdown-content h5 { font-size: 0.9rem; }
+.markdown-content h6 { font-size: 0.85rem; }
 
 /* Paragraphs */
 .markdown-content p {
-  margin-top: 0;
-  margin-bottom: var(--md-space-md);
-  line-height: var(--md-leading-normal);
+  margin: 0.5em 0;
 }
 
-/* Links - Subtle and professional */
+/* Lists */
+.markdown-content ul,
+.markdown-content ol {
+  margin: 0.5em 0;
+  padding-left: 2em;
+}
+
+.markdown-content li {
+  margin: 0.25em 0;
+}
+
+/* Nested lists should have proper indentation */
+.markdown-content li > ul,
+.markdown-content li > ol {
+  margin: 0.25em 0;
+}
+
+/* Links */
 .markdown-content a {
-  color: var(--md-accent-blue);
+  color: #1E90FF;
   text-decoration: none;
   border-bottom: 1px solid rgba(30, 144, 255, 0.3);
-  transition: all 0.2s ease;
 }
 
 .markdown-content a:hover {
-  color: var(--md-accent-orange);
-  border-bottom-color: var(--md-accent-orange);
+  color: #FF8C00;
+  border-bottom-color: #FF8C00;
 }
 
-/* Strong text */
-.markdown-content strong,
-.markdown-content b {
-  font-weight: 600;
-  color: var(--md-text-primary);
-}
-
-/* Emphasized text */
-.markdown-content em,
-.markdown-content i {
-  font-style: italic;
-  color: var(--md-text-primary);
-}
-
-/* ============================================================================
-   CODE BLOCKS - Clean and readable
-   ============================================================================ */
-
-/* Inline code */
+/* Code */
 .markdown-content code {
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
-  font-size: 0.875em;
-  background-color: var(--md-bg-tertiary);
-  color: var(--md-text-code);
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
-  font-weight: 500;
-  white-space: nowrap;
+  font-size: 0.85em;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
 }
 
-/* Code blocks */
 .markdown-content pre {
-  background-color: var(--md-bg-code);
-  border: 1px solid var(--md-border-color);
-  border-radius: var(--md-border-radius);
-  padding: var(--md-space-lg);
-  margin: var(--md-space-xl) 0;
+  background-color: #0d1117;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 1em;
+  margin: 0.5em 0;
   overflow-x: auto;
-  position: relative;
 }
 
 .markdown-content pre code {
   background: transparent;
-  color: var(--md-text-primary);
   padding: 0;
-  border-radius: 0;
-  font-size: var(--md-text-sm);
-  line-height: var(--md-leading-normal);
-  white-space: pre;
-  display: block;
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
-/* Code block with language indicator */
-.markdown-content pre[class*="language-"]::before {
-  content: attr(data-language);
-  position: absolute;
-  top: 0;
-  right: 0;
-  padding: var(--md-space-xs) var(--md-space-sm);
-  font-size: var(--md-text-xs);
-  color: var(--md-text-muted);
-  text-transform: uppercase;
-  font-weight: 500;
-  letter-spacing: 0.05em;
+/* Blockquotes */
+.markdown-content blockquote {
+  margin: 0.5em 0;
+  padding: 0.5em 1em;
+  border-left: 4px solid #1E90FF;
+  background-color: rgba(30, 144, 255, 0.05);
+  font-style: italic;
 }
 
-/* ============================================================================
-   LISTS - Clean and well-spaced
-   ============================================================================ */
-
-.markdown-content ul,
-.markdown-content ol {
-  margin: var(--md-space-lg) 0;
-  padding-left: var(--md-space-xl);
+/* Tables */
+.markdown-content table {
+  width: 100%;
+  margin: 0.5em 0;
+  border-collapse: collapse;
 }
 
+.markdown-content th,
+.markdown-content td {
+  padding: 0.5em;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+}
+
+.markdown-content th {
+  background-color: rgba(255, 255, 255, 0.05);
+  font-weight: 600;
+}
+
+/* Strong/Bold */
+.markdown-content strong,
+.markdown-content b {
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Emphasis/Italic */
+.markdown-content em,
+.markdown-content i {
+  font-style: italic;
+}
+
+/* Horizontal Rule */
+.markdown-content hr {
+  margin: 1em 0;
+  border: none;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Remove excessive margins */
+.markdown-content > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-content > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Compact spacing for nested content */
+.markdown-content li > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-content li > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Fix list item markers */
 .markdown-content ul {
   list-style-type: disc;
+}
+
+.markdown-content ul ul {
+  list-style-type: circle;
+}
+
+.markdown-content ul ul ul {
+  list-style-type: square;
 }
 
 .markdown-content ol {
   list-style-type: decimal;
 }
 
-.markdown-content li {
-  margin-bottom: var(--md-space-sm);
-  line-height: var(--md-leading-relaxed);
-}
-
+/* Ensure proper spacing between different list levels */
 .markdown-content li > p {
-  margin-bottom: var(--md-space-sm);
+  margin: 0;
 }
 
-/* Nested lists */
-.markdown-content li ul,
-.markdown-content li ol {
-  margin-top: var(--md-space-sm);
-  margin-bottom: var(--md-space-sm);
+/* Images */
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
 }
-
-/* Task lists */
-.markdown-content ul.task-list {
-  list-style: none;
-  padding-left: 0;
-}
-
-.markdown-content .task-list-item {
-  position: relative;
-  padding-left: var(--md-space-xl);
-}
-
-.markdown-content .task-list-item input[type="checkbox"] {
-  position: absolute;
-  left: 0;
-  top: 0.375rem;
-}
-
-/* ============================================================================
-   BLOCKQUOTES - Elegant and readable
-   ============================================================================ */
-.markdown-content blockquote {
-  margin: var(--md-space-xl) 0;
-  padding: var(--md-space-lg) var(--md-space-xl);
-  background-color: var(--md-bg-accent);
-  border-left: 4px solid var(--md-accent-blue);
-  border-radius: 0 var(--md-border-radius) var(--md-border-radius) 0;
-  font-style: italic;
-  color: var(--md-text-secondary);
-}
-
-.markdown-content blockquote > *:first-child {
-  margin-top: 0;
-}
-
-.markdown-content blockquote > *:last-child {
-  margin-bottom: 0;
-}
-
-/* ============================================================================
-   TABLES - Clean and scannable
-   ============================================================================ */
-.markdown-content table {
-  width: 100%;
-  margin: var(--md-space-xl) 0;
-  border-collapse: collapse;
-  overflow: hidden;
-  background-color: var(--md-bg-secondary);
-  border-radius: var(--md-border-radius);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.markdown-content thead {
-  background-color: var(--md-bg-tertiary);
-}
-
-.markdown-content th {
-  font-weight: 600;
-  text-align: left;
-  padding: var(--md-space-md) var(--md-space-lg);
-  border-bottom: 2px solid var(--md-border-color);
-  color: var(--md-text-primary);
-  font-size: var(--md-text-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.markdown-content td {
-  padding: var(--md-space-md) var(--md-space-lg);
-  border-bottom: 1px solid var(--md-border-color);
-}
-
-.markdown-content tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.markdown-content tbody tr:hover {
-  background-color: rgba(30, 144, 255, 0.05);
-}
-
-/* ============================================================================
-   HORIZONTAL RULES
-   ============================================================================ */
-.markdown-content hr {
-  margin: var(--md-space-3xl) 0;
-  border: none;
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    var(--md-border-color) 20%,
-    var(--md-border-color) 80%,
-    transparent
-  );
-}
-
-/* ============================================================================
-   SPECIAL ELEMENTS
-   ============================================================================ */
 
 /* Definition lists */
 .markdown-content dl {
-  margin: var(--md-space-lg) 0;
+  margin: 0.5em 0;
 }
 
 .markdown-content dt {
   font-weight: 600;
-  margin-bottom: var(--md-space-xs);
-  color: var(--md-text-primary);
+  margin-top: 0.5em;
 }
 
 .markdown-content dd {
-  margin-left: var(--md-space-xl);
-  margin-bottom: var(--md-space-md);
-  color: var(--md-text-secondary);
-}
-
-/* Keyboard input */
-.markdown-content kbd {
-  display: inline-block;
-  padding: 0.125rem 0.375rem;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
-  font-size: 0.875em;
-  color: var(--md-text-primary);
-  background-color: var(--md-bg-tertiary);
-  border: 1px solid var(--md-border-color);
-  border-radius: 0.25rem;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
-}
-
-/* Abbreviations */
-.markdown-content abbr[title] {
-  text-decoration: underline dotted;
-  cursor: help;
-}
-
-/* Marked/highlighted text */
-.markdown-content mark {
-  background-color: rgba(255, 140, 0, 0.2);
-  color: var(--md-accent-orange);
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.125rem;
-}
-
-/* ============================================================================
-   IMAGES & MEDIA
-   ============================================================================ */
-.markdown-content img {
-  max-width: 100%;
-  height: auto;
-  border-radius: var(--md-border-radius);
-  margin: var(--md-space-xl) 0;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-}
-
-.markdown-content figure {
-  margin: var(--md-space-xl) 0;
-}
-
-.markdown-content figcaption {
-  margin-top: var(--md-space-sm);
-  text-align: center;
-  color: var(--md-text-muted);
-  font-size: var(--md-text-sm);
-  font-style: italic;
-}
-
-/* ============================================================================
-   RESPONSIVE ADJUSTMENTS
-   ============================================================================ */
-@media (max-width: 768px) {
-  :root {
-    --md-text-base: 0.9375rem;
-  }
-  
-  .markdown-content table {
-    font-size: var(--md-text-sm);
-  }
-  
-  .markdown-content pre {
-    padding: var(--md-space-md);
-  }
-  
-  .markdown-content blockquote {
-    padding: var(--md-space-md) var(--md-space-lg);
-  }
-}
-
-/* ============================================================================
-   UTILITY CLASSES
-   ============================================================================ */
-
-/* Remove top margin from first child */
-.markdown-content > *:first-child {
-  margin-top: 0;
-}
-
-/* Remove bottom margin from last child */
-.markdown-content > *:last-child {
-  margin-bottom: 0;
-}
-
-/* Nested content spacing */
-.markdown-content li > *:last-child,
-.markdown-content blockquote > *:last-child,
-.markdown-content td > *:last-child {
-  margin-bottom: 0;
-}
-
-/* ============================================================================
-   PRINT STYLES
-   ============================================================================ */
-@media print {
-  .markdown-content {
-    color: #000;
-    background: #fff;
-  }
-  
-  .markdown-content a {
-    color: #000;
-    text-decoration: underline;
-  }
-  
-  .markdown-content pre,
-  .markdown-content code,
-  .markdown-content blockquote {
-    border: 1px solid #999;
-    page-break-inside: avoid;
-  }
+  margin-left: 2em;
+  margin-bottom: 0.5em;
 }
