@@ -101,9 +101,13 @@ ${modifiedUserPrompt}<|im_end|>
     const modelName = modelConfig.name.toLowerCase();
     
     if (modelName.includes('gemma')) {
-      return ['<end_of_turn>', '<start_of_turn>'].some(stop => token === stop);
+      // Check for exact matches and partial tokens that contain stop sequences
+      const stopTokens = ['<end_of_turn>', '<start_of_turn>', '<start_of_turn>user', '<start_of_turn>model'];
+      return stopTokens.some(stop => token === stop || token.includes(stop));
     } else if (modelName.includes('qwen')) {
-      return ['<|im_end|>', '<|im_start|>'].some(stop => token === stop);
+      // Check for exact matches and partial tokens that contain stop sequences
+      const stopTokens = ['<|im_end|>', '<|im_start|>', '<|im_start|>user', '<|im_start|>assistant', '<|im_start|>system'];
+      return stopTokens.some(stop => token === stop || token.includes(stop));
     }
     
     return false;
