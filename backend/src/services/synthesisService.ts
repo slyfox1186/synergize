@@ -98,24 +98,24 @@ export class SynthesisService {
     
     let prompt = `You are a synthesis expert facilitating collaboration between two AI models. Your task is to create a unified, coherent response that combines the best insights from both models.
 
-**Original Query:** ${originalQuery}
+Original Query: ${originalQuery}
 
-**Collaboration Phase:** ${phase}
+Collaboration Phase: ${phase}
 
-**Analysis Summary:**
+Analysis Summary:
 ${analysisReport}
 
-**${modelA} Response:**
+${modelA} Response:
 ---
 ${outputA}
 ---
 
-**${modelB} Response:**
+${modelB} Response:
 ---
 ${outputB}
 ---
 
-**Your Synthesis Task:**
+Your Synthesis Task:
 `;
 
     // Customize instructions based on consensus level
@@ -155,22 +155,22 @@ ${outputB}
 
     prompt += `
 
-**Formatting Guidelines:**
+Formatting Guidelines:
 - Use markdown formatting for clarity and readability
 - Structure your response with appropriate headings and sections
 - Use bullet points, numbered lists, or other formatting to organize information
-- Emphasize key terms and concepts with **bold** text where appropriate
+- Emphasize key terms and concepts with bold text where appropriate
 - You are encouraged to use markdown tables to display structured data
 - Consider using sections like "Key Points," "Important Considerations," "Implications," etc. as makes sense for the content
 
-**Content Guidelines:**
+Content Guidelines:
 - Write as a single, coherent response, not commentary about the models
 - Do not mention "Model A", "Model B", or the collaboration process
 - Focus on substance and provide actionable insights
 - Include specific details, examples, and concrete information where relevant
 - Present information in an authoritative, well-structured manner
 
-**CRITICAL VERIFICATION SECTION:**
+CRITICAL VERIFICATION SECTION:
 - You MUST include a "### Verification" section at the end
 - Show all mathematical/logical checks performed
 - For geometry: Verify angle sums, parallel line properties, triangle inequality
@@ -446,7 +446,7 @@ Create a comprehensive, well-formatted synthesis that effectively addresses the 
     
     const prompt = `You are creating the FINAL SYNTHESIS for a collaborative AI analysis. Your role is to present the conclusive answer with confidence.
 
-**CRITICAL INSTRUCTIONS:**
+CRITICAL INSTRUCTIONS:
 1. The insights are organized into two sections:
    - "FINAL SOLUTIONS" contains the actual final answers from both models - THIS IS THE MOST IMPORTANT
    - "DISCUSSION CONTEXT" contains earlier discussion for background only
@@ -454,32 +454,32 @@ Create a comprehensive, well-formatted synthesis that effectively addresses the 
 3. State the answer CLEARLY and CONFIDENTLY at the beginning
 4. If both models agree on an answer, present it as CONCLUSIVE
 
-**Original Query:** ${originalQuery}
+Original Query: ${originalQuery}
 
-**Collaboration Analysis:**
+Collaboration Analysis:
 - Consensus Level: ${consensusLevel}
 - Agreement Score: ${(overallSimilarity * 100).toFixed(0)}%
 - Phase: ${phase}
 
-**Insights from Collaboration:**
+Insights from Collaboration:
 ${relevantInsights.join('\n')}
 
-**YOUR SYNTHESIS TASK:**
+YOUR SYNTHESIS TASK:
 
-1. **FIRST PARAGRAPH**: State the final answer clearly and directly
+1. FIRST PARAGRAPH: State the final answer clearly and directly
    - If a numerical answer exists (like "263" or "11"), state it prominently
    - Reflect the confidence level shown in the FINAL SOLUTIONS
    - If both models state "conclusive" or "no errors", reflect that certainty
 
-2. **EXPLANATION**: Briefly explain how the models arrived at this answer
+2. EXPLANATION: Briefly explain how the models arrived at this answer
    - Use the DISCUSSION CONTEXT to show the reasoning journey
    - Keep this section concise
 
-3. **CONSENSUS STATEMENT**: Explicitly state whether the models reached consensus
+3. CONSENSUS STATEMENT: Explicitly state whether the models reached consensus
    - If they both found the same answer, emphasize this agreement
    - Use strong, confident language when consensus is achieved
 
-**IMPORTANT**: 
+IMPORTANT: 
 - Do NOT express doubt if the models are confident
 - Do NOT say "might be" or "possibly" if both models are certain
 - DO highlight the specific numerical answer if one exists
@@ -507,20 +507,20 @@ Generate the synthesis:`;
     
     const prompt = `You are creating the FINAL SYNTHESIS for a collaborative AI analysis session. Your synthesis should be comprehensive, well-formatted, and clearly present the conclusions reached through collaboration.
 
-**STRUCTURED SOLUTIONS (Most Important):**
+STRUCTURED SOLUTIONS (Most Important):
 ${solutionSummary}
 
-**Original Query:** ${originalQuery}
+Original Query: ${originalQuery}
 
-**Collaboration Analysis:**
+Collaboration Analysis:
 - Consensus Level: ${consensusLevel}
 - Agreement Score: ${(overallSimilarity * 100).toFixed(0)}%
 - Phase: ${phase}
 
-**Additional Context:**
+Additional Context:
 ${relevantInsights.join('\n')}
 
-**YOUR SYNTHESIS INSTRUCTIONS:**
+YOUR SYNTHESIS INSTRUCTIONS:
 
 Create a well-formatted synthesis with the following structure:
 
@@ -528,23 +528,23 @@ Create a well-formatted synthesis with the following structure:
 
 ### Finding the Measure of ∠DPE in △ABC
 
-**1. Problem Statement and Setup:**
+1. Problem Statement and Setup:
 - Restate the problem clearly
 - List all given information
 - State what needs to be found
 
-**2. Key Points & Insights:**
+2. Key Points & Insights:
 - List the important insights discovered during collaboration
 - Include any critical observations or patterns
 - Mention the specific approach used (if relevant)
 
-**3. Solution Process:**
+3. Solution Process:
 - Provide a clear, step-by-step solution
 - Include intermediate calculations
 - Show verification steps
 
-**4. Final Answer and Conclusion:**
-The answer is **[INSERT ANSWER HERE]**, representing [what it represents].
+4. Final Answer and Conclusion:
+The answer is [INSERT ANSWER HERE], representing [what it represents].
 
 Both models reached this conclusion with ${
   structuredSolutions.size > 0 && 
@@ -562,9 +562,9 @@ Both models reached this conclusion with ${
     : 'The collaborative process ensured accuracy.'
 }
 
-**FORMATTING REQUIREMENTS:**
+FORMATTING REQUIREMENTS:
 - Use proper markdown formatting with headers (##, ###)
-- Use **bold** for emphasis on key terms and the final answer
+- Use bold for emphasis on key terms and the final answer
 - Include bullet points for lists
 - Make the synthesis visually appealing and easy to read
 - Aim for 300-500 words to provide comprehensive coverage
@@ -582,7 +582,7 @@ Generate the synthesis:`;
     const formatted: string[] = [];
     
     for (const [modelId, solution] of solutions) {
-      formatted.push(`**${modelId}:**
+      formatted.push(`${modelId}:
 - Answer: ${solution.value}
 - Confidence: ${solution.confidence}
 - Status: ${solution.status}

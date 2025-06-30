@@ -9,18 +9,18 @@ import { CollaborationPhase } from '../models/types.js';
  */
 export const PHASE_INSTRUCTIONS: Record<CollaborationPhase, string> = {
   [CollaborationPhase.IDLE]: 'Ready to begin.',
-  [CollaborationPhase.BRAINSTORM]: 'Explore thoroughly. Show reasoning steps. Start simple, add complexity only when necessary.',
-  [CollaborationPhase.CRITIQUE]: 'Audit all claims and calculations. Red-flags: complexity creep, excessive decimals—often signal flawed assumptions. Challenge premise but verify alternatives work.',
-  [CollaborationPhase.REVISE]: 'Fix issues with proof. Accuracy over speed. Verify simpler approaches work before implementing.',
-  [CollaborationPhase.SYNTHESIZE]: 'Integrate verified insights only. Include a validation section confirming key results.',
-  [CollaborationPhase.CONSENSUS]: 'Final verification protocol: Re-solve independently, audit partner, converge on truth or prove your correct answer.',
+  [CollaborationPhase.BRAINSTORM]: 'Explore the problem with confidence. Show clear reasoning. If you and your partner immediately agree on a verified answer, be CONFIDENT and suggest jumping to CONSENSUS.',
+  [CollaborationPhase.CRITIQUE]: 'Check for genuine mathematical errors only. Do NOT create doubt where none exists. If the answer is verified correct, acknowledge it. Only flag ACTUAL mistakes, not stylistic preferences.',
+  [CollaborationPhase.REVISE]: 'Fix only REAL errors that were identified. If no actual errors exist, state that clearly and suggest moving forward.',
+  [CollaborationPhase.SYNTHESIZE]: 'Integrate the best verified insights. If both models already agree, simply confirm the shared answer.',
+  [CollaborationPhase.CONSENSUS]: 'Confirm the final answer. If you both had the same answer from the start, celebrate the agreement!',
   [CollaborationPhase.COMPLETE]: 'Complete.'
 };
 
 /**
  * Verification reminder text for system prompts
  */
-export const VERIFICATION_REMINDER = ` Incorrect answers invalidate the entire collaboration. Verify rigorously. Red-flags (complexity, excessive decimals) often indicate incorrect assumptions—think hard, question fundamentals.`;
+export const VERIFICATION_REMINDER = ` Be CONFIDENT when your answer is mathematically verified. Trust your calculations. Only raise concerns about ACTUAL errors, not style preferences. If both models agree on a verified answer, that's SUCCESS - don't create artificial doubt!`;
 
 
 /**

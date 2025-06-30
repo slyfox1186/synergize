@@ -1,508 +1,491 @@
 /* ============================================================================
-   ELECTRIC BLUE & ORANGE THEME - Premium Dark Mode
-   Science-backed color psychology for maximum cognitive engagement
+   SYNERGIZE MARKDOWN - Professional Dark Theme
+   Clean, modern typography with excellent readability
    ============================================================================ */
 
 /* ============================================================================
-   ELECTRIC NEON PALETTE - Futuristic, Professional, High-Contrast
+   DESIGN SYSTEM VARIABLES
    ============================================================================ */
 :root {
-  /* CHARCOAL FOUNDATIONS - Rich dark backgrounds with depth */
-  --md-bg-primary: #121212;           /* RICH CHARCOAL - Main background */
-  --md-bg-secondary: #1A1A1A;         /* ELEVATED CHARCOAL - Card backgrounds */
-  --md-bg-tertiary: #232323;          /* LIGHTER CHARCOAL - Code containers */
-  --md-bg-accent: #2A2A2A;            /* ACCENT CHARCOAL - Hover states */
+  /* Spacing Scale - Consistent vertical rhythm */
+  --md-space-xs: 0.25rem;
+  --md-space-sm: 0.5rem;
+  --md-space-md: 1rem;
+  --md-space-lg: 1.5rem;
+  --md-space-xl: 2rem;
+  --md-space-2xl: 3rem;
+  --md-space-3xl: 4rem;
   
-  /* HIGH-CONTRAST TEXT HIERARCHY */
-  --md-text-primary: #F0F0F0;         /* OFF-WHITE - Primary text */
-  --md-text-secondary: #E0E0E0;       /* LIGHT GRAY - Secondary text */
-  --md-text-muted: #A8A8A8;           /* MID-GRAY - Muted elements */
+  /* Typography Scale - Modular scale (1.25 ratio) */
+  --md-text-xs: 0.8rem;
+  --md-text-sm: 0.875rem;
+  --md-text-base: 1rem;
+  --md-text-lg: 1.125rem;
+  --md-text-xl: 1.25rem;
+  --md-text-2xl: 1.5rem;
+  --md-text-3xl: 1.875rem;
+  --md-text-4xl: 2.25rem;
+  --md-text-5xl: 2.75rem;
   
-  /* ELECTRIC BLUE SPECTRUM - Primary accent system */
-  --md-blue-electric: #1E90FF;        /* ELECTRIC BLUE - Primary accents */
-  --md-blue-bright: #4DA6FF;          /* LIGHTER BLUE - Secondary accents */
-  --md-blue-soft: #6BB6FF;            /* SOFT BLUE - Tertiary accents */
-  --md-blue-pale: #87C3FF;            /* PALE BLUE - Light highlights */
+  /* Line Heights */
+  --md-leading-tight: 1.25;
+  --md-leading-snug: 1.375;
+  --md-leading-normal: 1.5;
+  --md-leading-relaxed: 1.625;
+  --md-leading-loose: 1.75;
   
-  /* VIVID ORANGE SPECTRUM - Complementary accents */
-  --md-orange-vivid: #FF8C00;         /* VIVID AMBER - CTAs & highlights */
-  --md-orange-bright: #FFA533;        /* BRIGHT AMBER - Secondary highlights */
-  --md-orange-soft: #FFB84D;          /* SOFT AMBER - Tertiary warmth */
-  --md-orange-pale: #FFCB66;          /* PALE AMBER - Light accents */
+  /* Dark Theme Colors */
+  --md-bg-primary: #0a0a0a;
+  --md-bg-secondary: #141414;
+  --md-bg-tertiary: #1a1a1a;
+  --md-bg-code: #0d1117;
+  --md-bg-accent: rgba(30, 144, 255, 0.05);
   
-  /* SEMANTIC COLORS - Clear visual communication */
-  --md-success: #4CD964;              /* BRIGHT GREEN - Success states */
-  --md-error: #FF4433;                /* BOLD RED - Error states */
-  --md-warning: #FF8C00;              /* AMBER - Warning states */
+  /* Text Colors */
+  --md-text-primary: #e6e6e6;
+  --md-text-secondary: #b3b3b3;
+  --md-text-muted: #808080;
+  --md-text-code: #79c0ff;
   
-  /* Interactive Colors */
-  --md-link: var(--md-blue-electric);
-  --md-link-hover: var(--md-orange-vivid);
+  /* Accent Colors */
+  --md-accent-blue: #1E90FF;
+  --md-accent-orange: #FF8C00;
+  --md-accent-green: #4CD964;
+  --md-accent-purple: #AF52DE;
   
-  /* ELECTRIC BORDERS - Neon-inspired edges */
-  --md-border-subtle: rgba(30, 144, 255, 0.2);
-  --md-border-medium: rgba(30, 144, 255, 0.4);
-  --md-border-strong: rgba(30, 144, 255, 0.6);
-  --md-border-orange-subtle: rgba(255, 140, 0, 0.2);
-  --md-border-orange-medium: rgba(255, 140, 0, 0.4);
+  /* Borders */
+  --md-border-color: rgba(255, 255, 255, 0.1);
+  --md-border-radius: 0.375rem;
 }
 
 /* ============================================================================
-   BASE MARKDOWN CONTAINER
+   BASE CONTAINER
    ============================================================================ */
 .markdown-content {
   color: var(--md-text-primary);
-  line-height: 1.7;
-  font-size: 16px;
-  background-color: transparent;
+  font-size: var(--md-text-base);
+  line-height: var(--md-leading-relaxed);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   max-width: 100%;
-  overflow-wrap: break-word;
   word-wrap: break-word;
 }
 
 /* ============================================================================
-   TYPOGRAPHY HIERARCHY - Warm Color Gradation
+   TYPOGRAPHY - Professional Hierarchy
    ============================================================================ */
 
-/* Main Headings - Electric Blue primary, Orange secondary hierarchy */
+/* Headings - Clean and well-spaced */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  font-weight: 600;
+  line-height: var(--md-leading-tight);
+  margin-top: var(--md-space-2xl);
+  margin-bottom: var(--md-space-lg);
+  color: var(--md-text-primary);
+  position: relative;
+}
+
 .markdown-content h1 {
-  font-size: 2.25rem;
-  font-weight: 800;
-  color: var(--md-blue-electric);
-  margin: 2rem 0 1rem 0;
-  line-height: 1.3;
-  letter-spacing: 0.02em;
-  border-bottom: 2px solid var(--md-border-medium);
-  padding-bottom: 0.5rem;
-  text-shadow: 0 0 20px rgba(30, 144, 255, 0.5);
+  font-size: var(--md-text-4xl);
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: var(--md-space-xl);
+  padding-bottom: var(--md-space-md);
+  border-bottom: 1px solid var(--md-border-color);
+  color: var(--md-accent-blue);
 }
 
 .markdown-content h2 {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: var(--md-orange-vivid);
-  margin: 1.75rem 0 0.875rem 0;
-  line-height: 1.3;
-  letter-spacing: 0.01em;
-  text-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
+  font-size: var(--md-text-3xl);
+  margin-top: var(--md-space-3xl);
+  margin-bottom: var(--md-space-lg);
+  color: var(--md-text-primary);
 }
 
 .markdown-content h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--md-blue-bright);
-  margin: 1.5rem 0 0.75rem 0;
-  line-height: 1.4;
+  font-size: var(--md-text-2xl);
+  margin-top: var(--md-space-2xl);
+  margin-bottom: var(--md-space-md);
 }
 
 .markdown-content h4 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--md-orange-bright);
-  margin: 1.25rem 0 0.625rem 0;
-  line-height: 1.4;
+  font-size: var(--md-text-xl);
+  margin-top: var(--md-space-xl);
+  margin-bottom: var(--md-space-md);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--md-text-secondary);
 }
 
 .markdown-content h5 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--md-blue-soft);
-  margin: 1rem 0 0.5rem 0;
-  line-height: 1.5;
+  font-size: var(--md-text-lg);
+  margin-top: var(--md-space-lg);
+  margin-bottom: var(--md-space-sm);
+  color: var(--md-text-secondary);
 }
 
 .markdown-content h6 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--md-orange-soft);
-  margin: 0.875rem 0 0.4375rem 0;
-  line-height: 1.5;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: var(--md-text-base);
+  margin-top: var(--md-space-lg);
+  margin-bottom: var(--md-space-sm);
+  color: var(--md-text-muted);
+  font-weight: 500;
 }
 
-/* ============================================================================
-   TEXT EMPHASIS AND FORMATTING
-   ============================================================================ */
-
-/* Strong/Bold Text */
-.markdown-content strong,
-.markdown-content b {
-  font-weight: 700;
-  color: var(--md-orange-vivid);
-  font-size: 1.02em;
+/* Paragraphs */
+.markdown-content p {
+  margin-top: 0;
+  margin-bottom: var(--md-space-lg);
+  line-height: var(--md-leading-relaxed);
 }
 
-/* Emphasis/Italic Text */
-.markdown-content em,
-.markdown-content i {
-  font-style: italic;
-  color: var(--md-blue-bright);
-  font-size: 1.01em;
-}
-
-/* Combined Bold + Italic */
-.markdown-content strong em,
-.markdown-content b i,
-.markdown-content em strong,
-.markdown-content i b {
-  font-weight: 700;
-  font-style: italic;
-  color: var(--md-success);
-  font-size: 1.05em;
-  text-shadow: 0 0 10px rgba(76, 217, 100, 0.3);
-}
-
-/* Links */
+/* Links - Subtle and professional */
 .markdown-content a {
-  color: var(--md-link);
-  text-decoration: underline;
-  text-decoration-color: rgba(30, 144, 255, 0.5);
-  text-underline-offset: 0.2em;
+  color: var(--md-accent-blue);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(30, 144, 255, 0.3);
   transition: all 0.2s ease;
 }
 
 .markdown-content a:hover {
-  color: var(--md-link-hover);
-  text-decoration-color: var(--md-link-hover);
-  text-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
+  color: var(--md-accent-orange);
+  border-bottom-color: var(--md-accent-orange);
+}
+
+/* Strong text */
+.markdown-content strong,
+.markdown-content b {
+  font-weight: 600;
+  color: var(--md-text-primary);
+}
+
+/* Emphasized text */
+.markdown-content em,
+.markdown-content i {
+  font-style: italic;
+  color: var(--md-text-primary);
 }
 
 /* ============================================================================
-   CODE BLOCKS AND INLINE CODE
+   CODE BLOCKS - Clean and readable
    ============================================================================ */
 
-/* Code Blocks */
-.markdown-content pre {
+/* Inline code */
+.markdown-content code {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  font-size: 0.875em;
   background-color: var(--md-bg-tertiary);
-  border: 1px solid var(--md-border-subtle);
-  border-left: 4px solid var(--md-blue-electric);
-  border-radius: 8px;
-  padding: 1.25rem;
-  margin: 1.5rem 0;
+  color: var(--md-text-code);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Code blocks */
+.markdown-content pre {
+  background-color: var(--md-bg-code);
+  border: 1px solid var(--md-border-color);
+  border-radius: var(--md-border-radius);
+  padding: var(--md-space-lg);
+  margin: var(--md-space-xl) 0;
   overflow-x: auto;
-  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.3),
-    inset 0 0 20px rgba(30, 144, 255, 0.05);
+  position: relative;
 }
 
 .markdown-content pre code {
-  background: none;
-  border: none;
+  background: transparent;
+  color: var(--md-text-primary);
   padding: 0;
-  color: var(--md-blue-pale);
-  font-size: inherit;
+  border-radius: 0;
+  font-size: var(--md-text-sm);
+  line-height: var(--md-leading-normal);
+  white-space: pre;
+  display: block;
 }
 
-/* Inline Code */
-.markdown-content code {
-  background-color: var(--md-bg-accent);
-  color: var(--md-orange-bright);
-  padding: 0.2em 0.4em;
-  border-radius: 4px;
-  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
-  font-size: 0.9em;
+/* Code block with language indicator */
+.markdown-content pre[class*="language-"]::before {
+  content: attr(data-language);
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: var(--md-space-xs) var(--md-space-sm);
+  font-size: var(--md-text-xs);
+  color: var(--md-text-muted);
+  text-transform: uppercase;
   font-weight: 500;
-  border: 1px solid var(--md-border-orange-subtle);
+  letter-spacing: 0.05em;
 }
 
 /* ============================================================================
-   LISTS AND STRUCTURE
+   LISTS - Clean and well-spaced
    ============================================================================ */
 
-/* Unordered Lists */
-.markdown-content ul {
-  margin: 1rem 0;
-  padding-left: 2rem;
-}
-
-.markdown-content ul li {
-  margin: 0.5rem 0;
-  position: relative;
-}
-
-.markdown-content ul li::marker {
-  color: var(--md-blue-electric);
-}
-
-/* Ordered Lists */
+.markdown-content ul,
 .markdown-content ol {
-  margin: 1rem 0;
-  padding-left: 2rem;
+  margin: var(--md-space-lg) 0;
+  padding-left: var(--md-space-xl);
 }
 
-.markdown-content ol li {
-  margin: 0.5rem 0;
+.markdown-content ul {
+  list-style-type: disc;
 }
 
-.markdown-content ol li::marker {
-  color: var(--md-orange-vivid);
-  font-weight: 600;
+.markdown-content ol {
+  list-style-type: decimal;
 }
 
-/* Nested Lists */
+.markdown-content li {
+  margin-bottom: var(--md-space-sm);
+  line-height: var(--md-leading-relaxed);
+}
+
+.markdown-content li > p {
+  margin-bottom: var(--md-space-sm);
+}
+
+/* Nested lists */
 .markdown-content li ul,
 .markdown-content li ol {
-  margin: 0.25rem 0;
+  margin-top: var(--md-space-sm);
+  margin-bottom: var(--md-space-sm);
+}
+
+/* Task lists */
+.markdown-content ul.task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.markdown-content .task-list-item {
+  position: relative;
+  padding-left: var(--md-space-xl);
+}
+
+.markdown-content .task-list-item input[type="checkbox"] {
+  position: absolute;
+  left: 0;
+  top: 0.375rem;
 }
 
 /* ============================================================================
-   BLOCKQUOTES
+   BLOCKQUOTES - Elegant and readable
    ============================================================================ */
 .markdown-content blockquote {
-  background-color: var(--md-bg-secondary);
-  border-left: 4px solid var(--md-blue-electric);
-  margin: 1.5rem 0;
-  padding: 1rem 1.5rem;
-  border-radius: 0 6px 6px 0;
+  margin: var(--md-space-xl) 0;
+  padding: var(--md-space-lg) var(--md-space-xl);
+  background-color: var(--md-bg-accent);
+  border-left: 4px solid var(--md-accent-blue);
+  border-radius: 0 var(--md-border-radius) var(--md-border-radius) 0;
   font-style: italic;
   color: var(--md-text-secondary);
-  position: relative;
-  box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.2),
-    inset 0 0 20px rgba(30, 144, 255, 0.03);
 }
 
-.markdown-content blockquote::before {
-  content: '"';
-  color: var(--md-blue-electric);
-  font-size: 3rem;
-  line-height: 1;
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  font-family: serif;
-  opacity: 0.3;
+.markdown-content blockquote > *:first-child {
+  margin-top: 0;
 }
 
-.markdown-content blockquote p {
-  margin: 0.5rem 0;
+.markdown-content blockquote > *:last-child {
+  margin-bottom: 0;
 }
 
 /* ============================================================================
-   TABLES
+   TABLES - Clean and scannable
    ============================================================================ */
 .markdown-content table {
   width: 100%;
+  margin: var(--md-space-xl) 0;
   border-collapse: collapse;
-  margin: 1.5rem 0;
-  background-color: var(--md-bg-secondary);
-  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.3),
-    0 0 30px rgba(30, 144, 255, 0.1);
+  background-color: var(--md-bg-secondary);
+  border-radius: var(--md-border-radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.markdown-content thead {
+  background-color: var(--md-bg-tertiary);
 }
 
 .markdown-content th {
-  background-color: var(--md-bg-accent);
-  color: var(--md-blue-electric);
   font-weight: 600;
-  padding: 0.875rem 1rem;
   text-align: left;
-  border-bottom: 2px solid var(--md-border-medium);
-  text-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
+  padding: var(--md-space-md) var(--md-space-lg);
+  border-bottom: 2px solid var(--md-border-color);
+  color: var(--md-text-primary);
+  font-size: var(--md-text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .markdown-content td {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--md-border-subtle);
-  vertical-align: top;
+  padding: var(--md-space-md) var(--md-space-lg);
+  border-bottom: 1px solid var(--md-border-color);
 }
 
-.markdown-content tr:last-child td {
+.markdown-content tbody tr:last-child td {
   border-bottom: none;
 }
 
-.markdown-content tr:nth-child(even) {
-  background-color: rgba(30, 144, 255, 0.03);
-}
-
-/* Table Code */
-.markdown-content td code,
-.markdown-content th code {
-  background-color: var(--md-bg-primary);
-  font-size: 0.85em;
-}
-
-/* ============================================================================
-   MATHEMATICAL CONTENT (MathJax Integration)
-   ============================================================================ */
-.markdown-content .MathJax {
-  color: var(--md-success) !important;
-  background-color: var(--md-bg-secondary);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  border: 1px solid var(--md-border-subtle);
-}
-
-.markdown-content .MathJax_Display {
-  background-color: var(--md-bg-tertiary);
-  margin: 1.5rem 0 !important;
-  padding: 1rem !important;
-  border-radius: 8px;
-  border: 1px solid var(--md-border-medium);
-  text-align: center !important;
-  box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.2),
-    inset 0 0 20px rgba(76, 217, 100, 0.05);
-}
-
-.markdown-content .MathJax svg {
-  color: var(--md-success) !important;
-}
-
-.markdown-content .MathJax_Error {
-  color: var(--md-error) !important;
-  background-color: rgba(255, 68, 51, 0.1) !important;
-  border: 1px solid var(--md-error) !important;
-  border-radius: 4px !important;
-  padding: 0.25rem 0.5rem !important;
+.markdown-content tbody tr:hover {
+  background-color: rgba(30, 144, 255, 0.05);
 }
 
 /* ============================================================================
    HORIZONTAL RULES
    ============================================================================ */
 .markdown-content hr {
+  margin: var(--md-space-3xl) 0;
   border: none;
-  height: 2px;
+  height: 1px;
   background: linear-gradient(
-    90deg,
+    to right,
     transparent,
-    var(--md-border-medium),
+    var(--md-border-color) 20%,
+    var(--md-border-color) 80%,
     transparent
   );
-  margin: 2.5rem 0;
 }
 
 /* ============================================================================
-   SPECIAL CONTENT HIGHLIGHTING
+   SPECIAL ELEMENTS
    ============================================================================ */
 
-/* Key Result Boxes - When a paragraph contains only bold text */
-.markdown-content p strong:first-child:last-child {
-  display: inline-block;
-  background: linear-gradient(135deg, 
-    rgba(30, 144, 255, 0.1) 0%, 
-    rgba(255, 140, 0, 0.1) 100%
-  );
-  color: var(--md-text-primary);
-  font-size: 1.125rem;
-  font-weight: 700;
-  padding: 0.75rem 1.25rem;
-  margin: 1rem 0;
-  border-radius: 8px;
-  border: 2px solid var(--md-border-medium);
-  border-left: 4px solid var(--md-orange-vivid);
-  box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.2),
-    0 0 20px rgba(255, 140, 0, 0.1);
+/* Definition lists */
+.markdown-content dl {
+  margin: var(--md-space-lg) 0;
 }
 
-/* Highlighted/Marked Text */
-.markdown-content mark,
-.markdown-content .highlight {
-  background-color: var(--md-orange-vivid);
-  color: var(--md-bg-primary);
-  padding: 0.1em 0.3em;
-  border-radius: 3px;
+.markdown-content dt {
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  margin-bottom: var(--md-space-xs);
+  color: var(--md-text-primary);
+}
+
+.markdown-content dd {
+  margin-left: var(--md-space-xl);
+  margin-bottom: var(--md-space-md);
+  color: var(--md-text-secondary);
+}
+
+/* Keyboard input */
+.markdown-content kbd {
+  display: inline-block;
+  padding: 0.125rem 0.375rem;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  font-size: 0.875em;
+  color: var(--md-text-primary);
+  background-color: var(--md-bg-tertiary);
+  border: 1px solid var(--md-border-color);
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Abbreviations */
+.markdown-content abbr[title] {
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+/* Marked/highlighted text */
+.markdown-content mark {
+  background-color: rgba(255, 140, 0, 0.2);
+  color: var(--md-accent-orange);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.125rem;
 }
 
 /* ============================================================================
-   RESPONSIVE DESIGN
+   IMAGES & MEDIA
+   ============================================================================ */
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--md-border-radius);
+  margin: var(--md-space-xl) 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.markdown-content figure {
+  margin: var(--md-space-xl) 0;
+}
+
+.markdown-content figcaption {
+  margin-top: var(--md-space-sm);
+  text-align: center;
+  color: var(--md-text-muted);
+  font-size: var(--md-text-sm);
+  font-style: italic;
+}
+
+/* ============================================================================
+   RESPONSIVE ADJUSTMENTS
    ============================================================================ */
 @media (max-width: 768px) {
-  .markdown-content {
-    font-size: 15px;
-  }
-  
-  .markdown-content h1 {
-    font-size: 1.875rem;
-  }
-  
-  .markdown-content h2 {
-    font-size: 1.5rem;
-  }
-  
-  .markdown-content h3 {
-    font-size: 1.25rem;
-  }
-  
-  .markdown-content pre {
-    padding: 1rem;
-    margin: 1rem 0;
+  :root {
+    --md-text-base: 0.9375rem;
   }
   
   .markdown-content table {
-    font-size: 0.9rem;
+    font-size: var(--md-text-sm);
   }
   
-  .markdown-content th,
-  .markdown-content td {
-    padding: 0.5rem 0.75rem;
+  .markdown-content pre {
+    padding: var(--md-space-md);
+  }
+  
+  .markdown-content blockquote {
+    padding: var(--md-space-md) var(--md-space-lg);
   }
 }
 
 /* ============================================================================
-   PERFORMANCE OPTIMIZATIONS
+   UTILITY CLASSES
    ============================================================================ */
 
-/* Smooth scrolling for anchor links */
-.markdown-content {
-  scroll-behavior: smooth;
-}
-
-/* Optimize font rendering */
-.markdown-content {
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Ensure last element doesn't have extra margin */
-.markdown-content > *:last-child {
-  margin-bottom: 0;
-}
-
-/* Ensure first element doesn't have extra margin */
+/* Remove top margin from first child */
 .markdown-content > *:first-child {
   margin-top: 0;
 }
 
+/* Remove bottom margin from last child */
+.markdown-content > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Nested content spacing */
+.markdown-content li > *:last-child,
+.markdown-content blockquote > *:last-child,
+.markdown-content td > *:last-child {
+  margin-bottom: 0;
+}
+
 /* ============================================================================
-   ACCESSIBILITY ENHANCEMENTS
+   PRINT STYLES
    ============================================================================ */
-
-/* Focus indicators for interactive elements */
-.markdown-content a:focus {
-  outline: 2px solid var(--md-blue-electric);
-  outline-offset: 2px;
-  border-radius: 2px;
-  box-shadow: 0 0 10px rgba(30, 144, 255, 0.5);
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  :root {
-    --md-text-primary: #ffffff;
-    --md-blue-electric: #4DA6FF;
-    --md-orange-vivid: #FFA533;
-    --md-border-medium: rgba(30, 144, 255, 0.8);
-  }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
+@media print {
   .markdown-content {
-    scroll-behavior: auto;
+    color: #000;
+    background: #fff;
   }
   
   .markdown-content a {
-    transition: none;
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  .markdown-content pre,
+  .markdown-content code,
+  .markdown-content blockquote {
+    border: 1px solid #999;
+    page-break-inside: avoid;
   }
 }

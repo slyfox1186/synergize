@@ -129,13 +129,11 @@ export const MathAwareRenderer: React.FC<MathAwareRendererProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Early return for empty content
-  if (!content.trim()) {
-    return <div className={className} />;
-  }
-
-  // Render markdown
+  // Render markdown (must be called before any early returns)
   const html = useMemo(() => {
+    if (!content.trim()) {
+      return '';
+    }
     try {
       return md.render(content);
     } catch (e) {
@@ -143,6 +141,11 @@ export const MathAwareRenderer: React.FC<MathAwareRendererProps> = ({
       return `<pre>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
     }
   }, [content]);
+  
+  // Early return for empty content (after hooks)
+  if (!content.trim()) {
+    return <div className={className} />;
+  }
 
   // Use effect to update innerHTML to avoid React reconciliation issues
   useEffect(() => {

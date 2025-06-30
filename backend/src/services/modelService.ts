@@ -330,4 +330,14 @@ export class ModelService {
     
     this.logger.info('✅ Model service shutdown complete');
   }
+
+  /**
+   * GET LLAMA INSTANCE FOR GRAMMAR CREATION
+   */
+  getLlamaInstance(): Llama {
+    if (!this.llama) {
+      throw new Error('Llama instance not initialized. Call initialize() first.');
+    }
+    return this.llama;
+  }
 }

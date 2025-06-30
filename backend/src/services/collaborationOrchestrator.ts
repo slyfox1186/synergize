@@ -3,12 +3,11 @@ import { RedisService } from './redisService.js';
 import { StreamingService } from './streamingService.js';
 import { PromptFormatter } from './promptFormatter.js';
 import { ConversationStateManager } from './conversationStateManager.js';
-import { ConversationCurator } from './conversationCurator.js';
 import { ContextAllocator, TokenAllocation } from './contextAllocator.js';
 import { TokenCounter } from './tokenCounter.js';
 import { FinalAnswerService } from './finalAnswerService.js';
-import { DevilsAdvocateService } from './devilsAdvocateService.js';
 import { QwenThinkingService } from './qwenThinkingService.js';
+import { ReActAgreementAnalysisService } from './reactAgreementAnalysisService.js';
 import { 
   CollaborationPhase, 
   SSEMessage, 
@@ -31,7 +30,7 @@ import {
  * WORLD-CLASS CONVERSATIONAL COLLABORATION ORCHESTRATOR
  * 
  * Implements state-of-the-art AI collaboration with:
- * - Gemma as dual-role participant AND curator
+ * - Gemma as dual-role participant with agreement analysis
  * - Persistent conversation state with Redis
  * - Real-time context enhancement between turns
  * - Intelligent synthesis generation
@@ -41,12 +40,11 @@ export class CollaborationOrchestrator {
   private cancelled = false;
   private streamingService: StreamingService;
   private conversationManager: ConversationStateManager;
-  private curator: ConversationCurator;
   private contextAllocator: ContextAllocator;
   private tokenCounter: TokenCounter;
   private finalAnswerService: FinalAnswerService;
-  private devilsAdvocateService: DevilsAdvocateService;
   private qwenThinkingService: QwenThinkingService;
+  private agreementAnalysisService: ReActAgreementAnalysisService;
   private logger = createLogger('CollaborationOrchestrator');
   private verificationAttempts = 0;
   private readonly MAX_VERIFICATION_ATTEMPTS = 2;
@@ -70,28 +68,28 @@ export class CollaborationOrchestrator {
     // Compression now happens asynchronously at phase transitions
     const enableCompression = process.env.ENABLE_CONVERSATION_COMPRESSION !== 'false'; // Enabled by default
     this.conversationManager = new ConversationStateManager(this.redisService, this.modelService, enableCompression);
-    this.curator = new ConversationCurator(this.conversationManager, this.modelService);
     
     // Initialize final answer service
     this.finalAnswerService = new FinalAnswerService(modelService, this.streamingService, sendMessage);
     
-    // Initialize devil's advocate service
-    this.devilsAdvocateService = new DevilsAdvocateService(modelService, this.conversationManager, this.streamingService, sendMessage);
-    
     // Initialize Qwen thinking service with optimal settings
     this.qwenThinkingService = new QwenThinkingService(modelService, this.streamingService, sendMessage);
+    
+    // Initialize revolutionary ReAct Agreement Analysis Service
+    this.agreementAnalysisService = new ReActAgreementAnalysisService(modelService, sendMessage);
     
     this.logger.info('🧮 CollaborationOrchestrator initialized with professional token management:');
     this.logger.info('   ✅ TokenCounter with tiktoken precision');
     this.logger.info('   ✅ ContextAllocator with Gemini\'s algorithm');
     this.logger.info('   ✅ Dynamic phase-based allocation');
     this.logger.info('   ✅ QwenThinkingService with optimal thinking mode settings');
+    this.logger.info('   ✅ ReActAgreementAnalysisService with intelligent LLM-driven analysis');
   }
 
   /**
    * START WORLD-CLASS CONVERSATIONAL COLLABORATION
    * 
-   * Flow: Gemma → Qwen → Gemma(curator) → Gemma(participant) → repeat
+   * Flow: Gemma → Qwen → Agreement Analysis → Phase Decision → repeat
    */
   async startCollaboration(sessionId: string): Promise<void> {
     try {
@@ -100,6 +98,9 @@ export class CollaborationOrchestrator {
       
       // Initialize conversation management systems
       await this.conversationManager.initialize();
+      
+      // Initialize ReAct agreement analysis service
+      await this.agreementAnalysisService.initialize();
       
       // Load session data
       const sessionData = await this.redisService.getSession(sessionId) as { prompt: string; models: string[] } | null;
@@ -168,7 +169,8 @@ export class CollaborationOrchestrator {
       CollaborationPhase.CRITIQUE, 
       CollaborationPhase.REVISE,
       CollaborationPhase.SYNTHESIZE,
-      CollaborationPhase.CONSENSUS
+      CollaborationPhase.CONSENSUS,
+      CollaborationPhase.COMPLETE  // CRITICAL: Allow direct jump to final answer!
     ];
 
     let currentPhaseIndex = 0;
@@ -184,10 +186,32 @@ export class CollaborationOrchestrator {
         currentPhaseState: this.conversationState?.currentPhase
       });
       
-      // IMPORTANT: Ensure conversation state is set to the phase we're executing
-      // This was the bug - we weren't updating the state before executing the phase
+      // CRITICAL FIX: Check if agreement analysis made an intelligent phase jump
       if (this.conversationState && this.conversationState.currentPhase !== currentPhase) {
         const beforePhase = this.conversationState.currentPhase;
+        
+        // RESPECT INTELLIGENT PHASE JUMPS - Don't override agreement analysis decisions!
+        if (beforePhase === CollaborationPhase.COMPLETE || beforePhase === CollaborationPhase.CONSENSUS) {
+          this.logger.info(`🧠 RESPECTING INTELLIGENT PHASE JUMP: Agreement analysis jumped to ${beforePhase} - BREAKING OUT of sequential loop`, {
+            sessionId: this.conversationState.sessionId,
+            jumpedTo: beforePhase,
+            skippedPhase: currentPhase,
+            reason: 'agreement_analysis_phase_jump'
+          });
+          break; // Exit the entire phase loop - agreement analysis made the decision!
+        }
+        
+        // If it's any other terminal phase, also respect it
+        const terminalPhases = [CollaborationPhase.COMPLETE, CollaborationPhase.CONSENSUS];
+        if (terminalPhases.includes(beforePhase)) {
+          this.logger.info(`🎯 RESPECTING TERMINAL PHASE: Already in ${beforePhase} - collaboration complete`, {
+            sessionId: this.conversationState.sessionId,
+            terminalPhase: beforePhase
+          });
+          break;
+        }
+        
+        // Otherwise, this is normal sequential progression
         this.logger.info(`🔄 Phase transition needed`, {
           sessionId: this.conversationState.sessionId,
           fromPhase: beforePhase,
@@ -262,12 +286,19 @@ export class CollaborationOrchestrator {
         const newIndex = phases.indexOf(this.conversationState.currentPhase);
         this.logger.info(`🔍 PHASE LOOP: Phase changed during execution from ${currentPhase} to ${this.conversationState.currentPhase} (index ${newIndex})`);
         
-        // ULTRA-INTELLIGENT: Check if LLMs jumped directly to CONSENSUS
+        // ULTRA-INTELLIGENT: Check if LLMs jumped directly to terminal phases
         if (this.conversationState.currentPhase === CollaborationPhase.CONSENSUS) {
           this.logger.info(`🚀 ULTRA-INTELLIGENT JUMP: LLMs reached CONSENSUS early! Skipping intermediate phases.`);
           // Execute CONSENSUS phase to finalize
           await this.executeConversationalPhase(CollaborationPhase.CONSENSUS);
           break; // Exit loop and go to synthesis
+        }
+        
+        // CRITICAL FIX: Also handle COMPLETE phase jumps from agreement analysis
+        if (this.conversationState.currentPhase === CollaborationPhase.COMPLETE) {
+          this.logger.info(`🎯 ULTRA-INTELLIGENT JUMP: Agreement analysis determined COMPLETE! Both models provided confident answers.`);
+          // COMPLETE means we're done - no need to execute anything more
+          break; // Exit loop - collaboration is finished
         }
         
         if (newIndex >= 0 && newIndex !== currentPhaseIndex) {
@@ -327,6 +358,14 @@ export class CollaborationOrchestrator {
       payload: { phase, status: 'started' }
     });
 
+    // CRITICAL FIX: If CONSENSUS was reached via phase jump, skip dual model execution
+    if (phase === CollaborationPhase.CONSENSUS && this.conversationState && this.conversationState.turns.length >= 2) {
+      this.logger.info(`🚀 CONSENSUS reached via phase jump - skipping redundant model turns`);
+      // CONSENSUS phase after phase jump should go directly to synthesis
+      // The models already agreed, no need for additional turns
+      return;
+    }
+
     // Step 1: Gemma starts the conversation
     const gemmaInitialTurn = await this.executeModelTurn(
       this.GEMMA_MODEL_ID, 
@@ -342,21 +381,39 @@ export class CollaborationOrchestrator {
       gemmaInitialTurn.id
     );
 
-    // Step 3: Gemma provides summary/curation AND makes intelligent phase decision
-    const curationResult = await this.curator.curateTurn(
-      this.conversationState?.sessionId || '',
-      qwenResponseTurn.id,
-      this.GEMMA_MODEL_ID,
-      this.curator.getPhaseCurationFocus(phase)
-    );
+    // Step 3: Alert user about sophisticated AI orchestration happening behind the scenes
+    this.sendMessage({
+      type: SSEMessageType.MODEL_STATUS,
+      payload: {
+        sessionId: this.conversationState?.sessionId || '',
+        status: 'ANALYZING_AGREEMENT',
+        message: '🤖 AI Orchestrator analyzing model agreement using sophisticated ReAct reasoning...',
+        timestamp: Date.now()
+      }
+    });
 
-    // Send curation analysis to frontend
+    // Step 4: Perform sophisticated agreement analysis between both models
+    const agreementAnalysis = await this.agreementAnalysisService.analyze({
+      sessionId: this.conversationState?.sessionId || '',
+      currentPhase: phase,
+      originalQuery: this.conversationState?.originalQuery || '',
+      responseA: {
+        modelId: this.GEMMA_MODEL_ID,
+        content: gemmaInitialTurn.content
+      },
+      responseB: {
+        modelId: this.QWEN_MODEL_ID,
+        content: qwenResponseTurn.content
+      }
+    });
+
+    // Send agreement analysis to frontend
     this.sendMessage({
       type: SSEMessageType.SYNTHESIS_UPDATE,
       payload: { 
-        curation: curationResult,
+        agreementAnalysis,
         phase,
-        curatedTurn: qwenResponseTurn.id
+        analyzedTurns: [gemmaInitialTurn.id, qwenResponseTurn.id]
       }
     });
 
@@ -378,28 +435,33 @@ export class CollaborationOrchestrator {
         turnsSoFar: this.conversationState.turns.length
       });
 
-      // Use dedicated DevilsAdvocateService for critical analysis and phase decisions
-      this.logger.info(`👹 Performing devil's advocate analysis for ${phase}`);
-      const criticalAnalysis = await this.devilsAdvocateService.performCriticalAnalysis({
-        sessionId: this.conversationState.sessionId,
-        currentPhase: phase,
-        responseToAnalyze: qwenResponseTurn.content,
-        analyzerModelId: this.GEMMA_MODEL_ID
+      // Use the agreement analysis already performed above (no redundant analysis!)
+      this.logger.info(`🔬 Using existing agreement analysis for phase decision`);
+
+      // Validate finalRecommendation exists (critical fix!)
+      if (!agreementAnalysis.finalRecommendation) {
+        this.logger.error(`❌ Agreement analysis missing finalRecommendation - using fallback to CONSENSUS`);
+        await this.conversationManager.manualPhaseTransition(
+          this.conversationState.sessionId, 
+          CollaborationPhase.CONSENSUS
+        );
+        this.conversationState = await this.conversationManager.getConversationState(this.conversationState.sessionId);
+        return;
+      }
+
+      this.logger.info(`🧠 Agreement analysis complete:`, {
+        agreementLevel: agreementAnalysis.agreementLevel,
+        recommendedPhase: agreementAnalysis.finalRecommendation.nextPhase,
+        confidence: agreementAnalysis.finalRecommendation.confidence,
+        isPhaseJump: agreementAnalysis.finalRecommendation.isPhaseJump,
+        stageUsed: agreementAnalysis.analysisQuality.stageUsed
       });
 
-      const phaseDecision = criticalAnalysis.phaseDecision;
-      
-      this.logger.info(`🧠 Devil's advocate decision: ${phaseDecision.reasoning}`);
-      this.logger.info(`🔍 ANALYSIS RESULT: hasErrors=${criticalAnalysis.hasErrors}, severity=${criticalAnalysis.severity}, shouldTransition=${phaseDecision.shouldTransition}`);
-
-      // Handle critical errors by forcing CRITIQUE phase
-      if (criticalAnalysis.hasErrors && criticalAnalysis.severity === 'CRITICAL') {
-        this.logger.warn(`⚠️ Critical errors detected - forcing CRITIQUE phase`);
-        await this.devilsAdvocateService.forceCritiquePhase(
-          this.conversationState.sessionId,
-          phase,
-          phaseDecision.criticalIssuesFound
-        );
+      // Handle critical issues by forcing CRITIQUE phase
+      if (agreementAnalysis.keyFindings.criticalIssues.length > 0) {
+        this.logger.warn(`⚠️ Critical issues detected - forcing CRITIQUE phase`, {
+          issues: agreementAnalysis.keyFindings.criticalIssues
+        });
         
         await this.conversationManager.manualPhaseTransition(
           this.conversationState.sessionId, 
@@ -409,27 +471,40 @@ export class CollaborationOrchestrator {
         return; // Exit early due to forced critique
       }
 
-      // Handle normal phase transitions
-      if (phaseDecision.shouldTransition && phaseDecision.targetPhase) {
-        this.logger.info(`🔄 Executing devil's advocate transition from ${phase} to ${phaseDecision.targetPhase}`);
+      // Handle intelligent phase transitions
+      if (agreementAnalysis.finalRecommendation.nextPhase !== phase) {
+        this.logger.info(`🔄 Executing intelligent transition from ${phase} to ${agreementAnalysis.finalRecommendation.nextPhase}`, {
+          reasoning: agreementAnalysis.finalRecommendation.reasoning,
+          jumpReason: agreementAnalysis.finalRecommendation.jumpReason,
+          agreementLevel: agreementAnalysis.agreementLevel
+        });
         
-        await this.devilsAdvocateService.notifyPhaseTransition(
-          this.conversationState.sessionId,
-          phase,
-          phaseDecision.targetPhase,
-          phaseDecision.reasoning
-        );
+        // Send phase transition notification
+        this.sendMessage({
+          type: SSEMessageType.PHASE_UPDATE,
+          payload: { 
+            phase: agreementAnalysis.finalRecommendation.nextPhase, 
+            status: 'intelligent_transition',
+            reasoning: agreementAnalysis.finalRecommendation.reasoning,
+            previousPhase: phase,
+            agreementLevel: agreementAnalysis.agreementLevel,
+            isHighConfidenceJump: agreementAnalysis.finalRecommendation.isPhaseJump
+          }
+        });
         
         await this.conversationManager.manualPhaseTransition(
           this.conversationState.sessionId, 
-          phaseDecision.targetPhase
+          agreementAnalysis.finalRecommendation.nextPhase
         );
         this.conversationState = await this.conversationManager.getConversationState(this.conversationState.sessionId);
         
-        this.logger.info(`✅ Phase transition complete. New phase: ${this.conversationState?.currentPhase}`);
+        this.logger.info(`✅ Intelligent phase transition complete. New phase: ${this.conversationState?.currentPhase}`);
         return; // Exit early due to intelligent phase transition
       } else {
-        this.logger.info(`➡️ Continuing with current phase ${phase} (no transition - ${phaseDecision.reasoning})`);
+        this.logger.info(`➡️ Continuing with current phase ${phase}`, {
+          reasoning: agreementAnalysis.finalRecommendation.reasoning,
+          agreementLevel: agreementAnalysis.agreementLevel
+        });
       }
     }
 
@@ -719,10 +794,10 @@ export class CollaborationOrchestrator {
 Qwen3's verification found the following errors:
 ${errorDetails}
 
-**Original Problem:**
+Original Problem:
 ${this.conversationState.originalQuery}
 
-**YOUR TASK:**
+YOUR TASK:
 1. Carefully review the error details above
 2. Identify what went wrong in the previous solution
 3. Provide a CORRECTED solution that addresses these errors
@@ -960,10 +1035,10 @@ ${this.tokenCounter.truncateToTokenLimit(latestGemmaContent, 300)}
 ${this.tokenCounter.truncateToTokenLimit(latestQwenContent, 300)}
 
 ## Extracted Results:
-- **Gemma answers:** ${gemmaAnswers.length > 0 ? gemmaAnswers.join(', ') : 'No explicit answers found'}
-- **Qwen answers:** ${qwenAnswers.length > 0 ? qwenAnswers.join(', ') : 'No explicit answers found'}
-- **Consensus:** ${sharedAnswers.length > 0 ? sharedAnswers.join(', ') : 'No shared answers found'}
-- **Methods used:** ${[...new Set([...gemmaMethods, ...qwenMethods])].join(', ') || 'Various approaches'}
+- Gemma answers: ${gemmaAnswers.length > 0 ? gemmaAnswers.join(', ') : 'No explicit answers found'}
+- Qwen answers: ${qwenAnswers.length > 0 ? qwenAnswers.join(', ') : 'No explicit answers found'}
+- Consensus: ${sharedAnswers.length > 0 ? sharedAnswers.join(', ') : 'No shared answers found'}
+- Methods used: ${[...new Set([...gemmaMethods, ...qwenMethods])].join(', ') || 'Various approaches'}
 
 ## Your Synthesis Task:
 1. Provide the definitive answer based on the collaboration
@@ -1103,7 +1178,7 @@ Make the synthesis authoritative and actionable.`;
       
       for (const solution of structuredSolutions.values()) {
         if (solution.value && solution.confidence === 'high') {
-          synthesisContent += `**The answer is ${solution.value}**\n\n`;
+          synthesisContent += `The answer is ${solution.value}\n\n`;
           if (solution.reasoning) {
             synthesisContent += `${solution.reasoning}\n\n`;
           }
@@ -1116,7 +1191,7 @@ Make the synthesis authoritative and actionable.`;
       const uniqueAnswers = [...new Set(allAnswers)];
       
       if (uniqueAnswers.length === 1) {
-        synthesisContent += `Both models independently arrived at the same answer: **${uniqueAnswers[0]}**\n\n`;
+        synthesisContent += `Both models independently arrived at the same answer: ${uniqueAnswers[0]}\n\n`;
       } else {
         synthesisContent += `The models provided these answers:\n`;
         for (const [modelId, solution] of structuredSolutions) {
@@ -1134,8 +1209,8 @@ Make the synthesis authoritative and actionable.`;
       
       synthesisContent += `Both models have completed analysis through ${this.conversationState.turns.length} exchanges.\n\n`;
       synthesisContent += `## Key Insights:\n\n`;
-      synthesisContent += `**From ${this.GEMMA_MODEL_ID}:**\n${gemmaContent || 'Analysis focused on systematic approach'}\n\n`;
-      synthesisContent += `**From ${this.QWEN_MODEL_ID}:**\n${qwenContent || 'Analysis emphasized comprehensive evaluation'}\n\n`;
+      synthesisContent += `From ${this.GEMMA_MODEL_ID}:\n${gemmaContent || 'Analysis focused on systematic approach'}\n\n`;
+      synthesisContent += `From ${this.QWEN_MODEL_ID}:\n${qwenContent || 'Analysis emphasized comprehensive evaluation'}\n\n`;
     }
 
     synthesisContent += `## Summary\n\n`;
@@ -1339,7 +1414,18 @@ Make the synthesis authoritative and actionable.`;
           const tokenText = context.model.detokenize(tokens, false, contextTokens);
           
           if (tokenText) {
-            this.streamingService.addToken(modelId, phase, tokenText);
+            // CRITICAL: Filter out stop tokens to prevent HTML rendering issues
+            // Stop tokens like <|im_end|> break React rendering when sent to frontend
+            const isStopToken = PromptFormatter.isStopToken(modelConfig, tokenText);
+            
+            if (!isStopToken) {
+              this.streamingService.addToken(modelId, phase, tokenText);
+            } else {
+              this.logger.debug('Filtered stop token from stream', { 
+                modelId, 
+                stopToken: tokenText 
+              });
+            }
           }
         }
       };

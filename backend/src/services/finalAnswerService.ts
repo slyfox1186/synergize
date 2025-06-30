@@ -12,12 +12,12 @@ import { TokenCounter } from './tokenCounter.js';
 import { 
   CollaborationPhase, 
   SSEMessage, 
-  SSEMessageType,
-  TokenChunk
+  SSEMessageType
 } from '../models/types.js';
 import { LlamaContext, Token } from 'node-llama-cpp';
 import { createLogger } from '../utils/logger.js';
 import { config } from '../config.js';
+import { PromptFormatter } from './promptFormatter.js';
 
 export interface FinalAnswerOptions {
   sessionId: string;
@@ -109,10 +109,8 @@ export class FinalAnswerService {
       let finalAnswer = '';
       
       try {
-        // Send initial signal to activate the panel
-        if (options.routeToSynthesis) {
-          this.sendInitialSynthesisSignal();
-        }
+        // REMOVED: sendInitialSynthesisSignal() - was causing SSE connection to break
+        // Frontend will now activate synthesis panel on first actual token
 
         // Generate the final answer
         finalAnswer = await this.generateWithStreaming(
@@ -234,22 +232,8 @@ export class FinalAnswerService {
     this.streamingService.completeStream = originalCompleteStream;
   }
 
-  /**
-   * Send initial signal to activate synthesis panel
-   */
-  private sendInitialSynthesisSignal(): void {
-    this.logger.info('🎬 Sending initial synthesis panel activation signal');
-    
-    this.sendMessage({
-      type: SSEMessageType.SYNTHESIS_UPDATE,
-      payload: {
-        modelId: 'synthesis',
-        phase: CollaborationPhase.SYNTHESIZE,
-        tokens: [''],  // Empty token to trigger panel activation
-        isComplete: false
-      } as TokenChunk
-    });
-  }
+  // REMOVED: sendInitialSynthesisSignal() function - was causing SSE connection breaks
+  // Frontend now activates synthesis panel on first actual TOKEN_CHUNK with synthesis modelId
 
   /**
    * Generate content with streaming
@@ -284,6 +268,9 @@ export class FinalAnswerService {
       });
 
       let tokenCount = 0;
+      // Create a token buffer to maintain context for proper spacing
+      const tokenBuffer: Token[] = [];
+      const TOKEN_CONTEXT_SIZE = 10; // Keep last 10 tokens for context
 
       const generationOptions = {
         temperature: modelConfig.settings.temperature,
@@ -292,19 +279,31 @@ export class FinalAnswerService {
         minP: modelConfig.settings.minP,
         maxTokens: allocation.maxGenerationTokens,
         onToken: (tokens: Token[]): void => {
-          // Detokenize tokens
-          const tokenText = context.model.detokenize(tokens, false);
+          // Add new tokens to buffer
+          tokenBuffer.push(...tokens);
+          
+          // Keep buffer size limited
+          if (tokenBuffer.length > TOKEN_CONTEXT_SIZE) {
+            tokenBuffer.splice(0, tokenBuffer.length - TOKEN_CONTEXT_SIZE);
+          }
+          
+          // Calculate context tokens for proper spacing
+          const contextSize = Math.max(0, tokenBuffer.length - tokens.length);
+          const contextTokens = contextSize > 0 ? tokenBuffer.slice(0, contextSize) : undefined;
+          
+          // Detokenize with context for proper spacing
+          const tokenText = context.model.detokenize(tokens, false, contextTokens);
           
           if (tokenText) {
-            tokenCount += tokens.length;
+            // CRITICAL: Filter out stop tokens to prevent HTML rendering issues
+            const isStopToken = PromptFormatter.isStopToken(modelConfig, tokenText);
             
-            // Stream the token
-            this.streamingService.addToken(modelId, phase, tokenText);
-            
-            this.logger.debug('📤 Token streamed', {
-              tokenText: tokenText.slice(0, 20) + (tokenText.length > 20 ? '...' : ''),
-              tokenCount
-            });
+            if (!isStopToken) {
+              tokenCount += tokens.length;
+              
+              // Stream the token
+              this.streamingService.addToken(modelId, phase, tokenText);
+            }
           }
         }
       };
@@ -388,7 +387,7 @@ export class FinalAnswerService {
     
     // Stream the fallback content
     if (options.routeToSynthesis) {
-      this.sendInitialSynthesisSignal();
+      // REMOVED: sendInitialSynthesisSignal() - was causing SSE connection to break
       this.streamingService.addToken('synthesis', options.phase, fallbackContent);
       this.sendCompletionSignal(options.modelId, options.phase, true);
     } else {
