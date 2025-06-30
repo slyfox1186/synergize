@@ -1,202 +1,63 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import MarkdownIt from 'markdown-it';
 
-// Type definitions for markdown-it state objects
-interface StateInline {
-  src: string;
-  pos: number;
-  posMax: number;
-  push: (type: string, tag: string, nesting: 0 | 1 | -1) => { content: string };
-}
-
-interface StateBlock {
-  src: string;
-  bMarks: number[];
-  eMarks: number[];
-  tShift: number[];
-  line: number;
-  lineMax: number;
-  push: (type: string, tag: string, nesting: 0 | 1 | -1) => { content: string };
-  getLines: (begin: number, end: number, indent: number, keepLastLF: boolean) => string;
-}
-
-declare global {
-  interface Window {
-    MathJax?: {
-      typesetPromise?: (elements: Element[]) => Promise<void>;
-      startup?: {
-        promise?: Promise<void>;
-      };
-    };
-  }
-}
-
-// Custom rule to protect math delimiters from markdown processing
-function mathProtect(md: MarkdownIt): void {
-  const mathInline = (state: StateInline, silent: boolean): boolean => {
-    const start = state.pos;
-    const max = state.posMax;
-    
-    // Check for opening $
-    if (state.src[start] !== '$') return false;
-    
-    // Find closing $
-    let pos = start + 1;
-    while (pos < max && state.src[pos] !== '$') {
-      if (state.src[pos] === '\\') pos++; // Skip escaped characters
-      pos++;
-    }
-    
-    // No closing delimiter found
-    if (pos >= max || state.src[pos] !== '$') return false;
-    
-    // Don't match empty content
-    if (pos === start + 1) return false;
-    
-    if (!silent) {
-      const token = state.push('html_inline', '', 0);
-      token.content = state.src.slice(start, pos + 1);
-    }
-    
-    state.pos = pos + 1;
-    return true;
-  };
-  
-  const mathBlock = (state: StateBlock, startLine: number, endLine: number, silent: boolean): boolean => {
-    const start = state.bMarks[startLine] + state.tShift[startLine];
-    const max = state.eMarks[startLine];
-    
-    // Check for $$
-    if (start + 2 > max) return false;
-    if (state.src.slice(start, start + 2) !== '$$') return false;
-    
-    // Find closing $$
-    let nextLine = startLine;
-    let found = false;
-    
-    while (nextLine < endLine) {
-      const lineStart = state.bMarks[nextLine] + state.tShift[nextLine];
-      const lineEnd = state.eMarks[nextLine];
-      
-      if (lineStart < lineEnd) {
-        const pos = state.src.indexOf('$$', lineStart);
-        if (pos >= lineStart && pos < lineEnd) {
-          found = true;
-          break;
-        }
-      }
-      nextLine++;
-    }
-    
-    if (!found) return false;
-    
-    if (!silent) {
-      const token = state.push('html_block', '', 0);
-      token.content = state.getLines(startLine, nextLine + 1, 0, true).trim();
-    }
-    
-    state.line = nextLine + 1;
-    return true;
-  };
-  
-  md.inline.ruler.before('escape', 'math_inline', mathInline);
-  md.block.ruler.before('fence', 'math_block', mathBlock);
-}
-
-const md = new MarkdownIt({
-  html: true,
-  linkify: true,
-  typographer: false,
-  breaks: true,
-}).use(mathProtect);
-
-interface MathAwareRendererProps {
+interface MarkdownRendererProps {
   content: string;
   phase: string;
   modelId: string;
   className?: string;
 }
 
-/**
- * Component that renders markdown content with MathJax support
- * Optimized for real-time token streaming
- */
-export const MathAwareRenderer: React.FC<MathAwareRendererProps> = ({
+// Initialize markdown-it with proper settings
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+  breaks: true,
+  highlight: function (str: string, lang: string): string {
+    // Basic syntax highlighting support
+    if (lang) {
+      return `<pre class="language-${lang}"><code>${md.utils.escapeHtml(str)}</code></pre>`;
+    }
+    return `<pre><code>${md.utils.escapeHtml(str)}</code></pre>`;
+  }
+});
+
+export const MathAwareRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   phase,
   modelId,
   className = ''
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  
-  // Render markdown (must be called before any early returns)
+  // Render markdown to HTML
   const html = useMemo(() => {
-    if (!content.trim()) {
-      return '';
-    }
+    if (!content) return '';
     try {
       return md.render(content);
-    } catch (e) {
-      // If markdown-it fails, return escaped content
-      return `<pre>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
+    } catch (error) {
+      console.error('Markdown rendering error:', error);
+      return md.utils.escapeHtml(content);
     }
   }, [content]);
-  
-  // Early return for empty content (after hooks)
-  if (!content.trim()) {
-    return <div className={className} />;
-  }
-
-  // Use effect to update innerHTML to avoid React reconciliation issues
-  useEffect(() => {
-    if (containerRef.current && html) {
-      // Set content immediately for faster rendering
-      containerRef.current.innerHTML = html;
-      
-      // Process math with MathJax if available and content exists
-      if (window.MathJax?.typesetPromise && html.trim()) {
-        // Ensure MathJax is ready before typesetting
-        const typesetMath = async (): Promise<void> => {
-          try {
-            // Wait for MathJax to be ready if needed
-            if (window.MathJax?.startup?.promise) {
-              await window.MathJax.startup.promise;
-            }
-            // Only typeset if we still have the container and content
-            if (window.MathJax?.typesetPromise && containerRef.current && containerRef.current.innerHTML.trim()) {
-              await window.MathJax.typesetPromise([containerRef.current]);
-            }
-          } catch (e) {
-            // Log errors in development for debugging
-            if (process.env.NODE_ENV === 'development') {
-              console.warn('MathJax typeset error:', e);
-            }
-          }
-        };
-        
-        // Use requestAnimationFrame to ensure DOM is updated before MathJax processing
-        requestAnimationFrame(() => {
-          typesetMath();
-        });
-      }
-    }
-  }, [html]);
 
   return (
     <div 
-      className={`markdown-wrapper ${className}`}
+      className={`${className}`}
       data-phase={phase}
       data-model={modelId}
     >
-      <div ref={containerRef} className="markdown-content" />
+      <div 
+        className="markdown-content" 
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
     </div>
   );
 };
 
 /**
- * Optimized version for synthesis content that may have complex mathematics
+ * Optimized version for synthesis content
  */
-export const SynthesisMathRenderer: React.FC<Omit<MathAwareRendererProps, 'phase' | 'modelId'>> = ({
+export const SynthesisMathRenderer: React.FC<Omit<MarkdownRendererProps, 'phase' | 'modelId'>> = ({
   content,
   className = ''
 }) => {
@@ -209,6 +70,5 @@ export const SynthesisMathRenderer: React.FC<Omit<MathAwareRendererProps, 'phase
     />
   );
 };
-
 
 export default MathAwareRenderer;
