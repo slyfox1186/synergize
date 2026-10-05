@@ -304,9 +304,13 @@ export class FinalAnswerService {
     try {
       // Create chat session
       const { LlamaChatSession } = await import('node-llama-cpp');
+      // Gemma's chat wrapper reports no system-message support, so without
+      // forceAddSystemPrompt the session silently drops the system prompt;
+      // with it, the wrapper prepends the prompt to the first user turn
       const session = new LlamaChatSession({
         contextSequence: sequence,
-        systemPrompt
+        systemPrompt,
+        forceAddSystemPrompt: true
       });
 
       let tokenCount = 0;
@@ -425,7 +429,7 @@ export class FinalAnswerService {
       modelId: options.modelId
     });
 
-    const fallbackContent = "I couldn't generate the final answer: the model run failed before it finished. Please run the question again.";
+    const fallbackContent = "I couldn't generate the final answer because an error interrupted it. Please run the question again.";
     
     // Stream the fallback content
     if (options.routeToSynthesis) {

@@ -546,7 +546,7 @@ Create a well-formatted synthesis with the following structure:
 4. Final Answer and Conclusion:
 The answer is [INSERT ANSWER HERE], representing [what it represents].
 
-${this.describeSolutionAgreement(structuredSolutions, analysis)}
+${this.describeSolutionAgreement(structuredSolutions)}
 
 FORMATTING REQUIREMENTS:
 - Use proper markdown formatting with headers (##, ###)
@@ -562,29 +562,49 @@ Generate the synthesis:`;
   }
 
   /**
-   * Describe how far the models' structured answers agree, so the synthesis
-   * claims consensus only when the extracted answers actually match
+   * Describe how far the models' extracted answers agree, claiming only what the
+   * extraction shows: agreement when the answers match, nothing either way when
+   * only one answer was extracted
    */
-  private describeSolutionAgreement(
-    solutions: Map<string, StructuredSolution>,
-    analysis: AgreementAnalysis
-  ): string {
+  private describeSolutionAgreement(solutions: Map<string, StructuredSolution>): string {
     const entries = Array.from(solutions.entries());
-    const distinctAnswers = new Set(entries.map(([, solution]) => String(solution.value).trim()));
+    const answers = entries.map(([modelId, solution]) => `${modelId}: ${this.displayAnswer(solution.value)}`).join('; ');
 
-    if (entries.length < 2 || distinctAnswers.size > 1) {
-      const answers = entries.map(([modelId, solution]) => `${modelId}: ${solution.value}`).join('; ');
-      return `The extracted final answers do not show agreement (${answers}). State which answer the evidence supports and why, and say plainly that the models did not converge.`;
+    if (entries.length < 2) {
+      return `Only one model's final answer could be extracted (${answers}). Present the answer the evidence supports without claiming the models agreed or disagreed.`;
     }
 
-    const solutionValues = entries.map(([, solution]) => solution);
-    const confidence = solutionValues.every(s => s.confidence === 'high') ? 'high confidence' : 'consensus';
-    const method = solutionValues.every(s => s.status === 'conclusive') ? 'rigorous verification' : 'collaborative analysis';
-    const support = analysis.keyPoints.agreements.length > 0
-      ? ` The models independently verified the solution through ${analysis.keyPoints.agreements.length} key agreement points.`
-      : '';
+    const distinctAnswers = new Set(entries.map(([, solution]) => this.normalizeAnswer(solution.value)));
+    if (distinctAnswers.size > 1) {
+      return `The extracted final answers differ (${answers}). If they are the same answer written differently, say so; otherwise state which answer the evidence supports and why, and say plainly that the models did not converge.`;
+    }
 
-    return `Both models reached this conclusion with ${confidence} through ${method}.${support}`;
+    const allHighAndConclusive = entries.every(([, solution]) => solution.confidence === 'high' && solution.status === 'conclusive');
+    return `Both models gave this answer${allHighAndConclusive ? ', each with high confidence and a conclusive status' : ''}.`;
+  }
+
+  /**
+   * Normalize an extracted answer for comparison, so 72, "72°" and "72 degrees" match
+   */
+  private normalizeAnswer(value: unknown): string {
+    if (value !== null && typeof value === 'object') return JSON.stringify(value);
+
+    const text = String(value)
+      .trim()
+      .toLowerCase()
+      .replace(/[$*`]/g, '')
+      .replace(/°|\bdegrees?\b/g, '')
+      .replace(/(\d),(?=\d{3}\b)/g, '$1')
+      .trim();
+    const numeric = Number(text);
+    return text !== '' && Number.isFinite(numeric) ? String(numeric) : text;
+  }
+
+  /**
+   * Render an extracted answer for the prompt, including object-valued answers
+   */
+  private displayAnswer(value: unknown): string {
+    return value !== null && typeof value === 'object' ? JSON.stringify(value) : String(value);
   }
 
   /**
