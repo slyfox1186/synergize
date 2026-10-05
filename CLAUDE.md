@@ -40,6 +40,7 @@ backend/src/
 ├── controllers/        # sseController for streaming endpoints
 ├── services/           # Core business logic (modelService, collaborationOrchestrator, etc.)
 ├── models/            # Type definitions and conversation types
+├── prompts/           # Jane persona (system prompt for the user-facing final answer)
 └── utils/             # Logging utilities
 ```
 
@@ -55,7 +56,8 @@ backend/src/
   - `modelService` manages GGUF model loading/pooling with context management
   - `streamingService` handles SSE responses with token batching
   - `redisVectorStore` implements vector search with proper UUID escaping
-  - `finalAnswerService` generates and streams the final synthesized answer
+  - `finalAnswerService` generates and streams the final synthesized answer in Jane's voice
+  - `prompts/janePersona.ts` holds Jane's partner guidelines (full and compact) plus the runtime context block
   - `qwenThinkingService` implements special thinking mode for mathematical verification
 
 - **Memory**: Redis with vector embeddings using Xenova transformers for semantic search
@@ -81,6 +83,12 @@ Key variables: `PORT` (8000), `REDIS_URL`, `MODEL_CONTEXT_SIZE` (4096), `MODEL_B
 - **contextAllocator.ts** manages phase-specific token budgets to prevent context overflow
 - **conversationCompressor.ts** handles memory compression for long conversations
 - Token allocation percentages by phase configured in `conversationStateManager.ts`
+
+### Jane Persona
+- Jane is the conversational partner who speaks to the user; only the final answer (`FinalAnswerService`) uses her system prompt. The collaborating models keep their phase prompts.
+- `JANE_GUIDELINES` match the original partner guidelines except for four lines about capabilities Synergize lacks (web research, file reading, cross-conversation memory, file export, LaTeX rendering). Keep those lines truthful when editing: the guidelines tell the model its listed capabilities are real.
+- `FinalAnswerService` uses the full guidelines (~2.2k tokens with runtime context) when they fit alongside the synthesis prompt and the phase's minimum generation space; otherwise it falls back to `JANE_GUIDELINES_COMPACT` (~0.7k tokens).
+- Synthesis prompts in `synthesisService.ts` are task instructions, not identities: don't open them with "You are ..." or they will contradict Jane.
 
 ### Phase Transition System
 - **Critical**: Phase transitions controlled by LLMs through `conversationCurator.makePhaseDecision()`

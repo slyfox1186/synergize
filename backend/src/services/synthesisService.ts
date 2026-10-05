@@ -96,7 +96,7 @@ export class SynthesisService {
     // Create compact analysis summary to save tokens
     const analysisReport = this.createCompactAnalysisReport(analysis);
     
-    let prompt = `You are a synthesis expert facilitating collaboration between two AI models. Your task is to create a unified, coherent response that combines the best insights from both models.
+    let prompt = `Your task is to create a unified, coherent response that combines the best insights from two AI models.
 
 Original Query: ${originalQuery}
 
@@ -444,7 +444,7 @@ Create a comprehensive, well-formatted synthesis that effectively addresses the 
   ): Promise<string> {
     const { consensusLevel, overallSimilarity } = analysis;
     
-    const prompt = `You are creating the FINAL SYNTHESIS for a collaborative AI analysis. Your role is to present the conclusive answer with confidence.
+    const prompt = `Write the FINAL SYNTHESIS for a collaborative AI analysis, presenting the conclusive answer with the confidence the evidence supports.
 
 CRITICAL INSTRUCTIONS:
 1. The insights are organized into two sections:
@@ -479,11 +479,11 @@ YOUR SYNTHESIS TASK:
    - If they both found the same answer, emphasize this agreement
    - Use strong, confident language when consensus is achieved
 
-IMPORTANT: 
-- Do NOT express doubt if the models are confident
-- Do NOT say "might be" or "possibly" if both models are certain
+IMPORTANT:
+- Do NOT express doubt about an answer both models reached and verified
+- Do NOT say "might be" or "possibly" about an answer both models verified
 - DO highlight the specific numerical answer if one exists
-- DO use confident language like "The solution is..." rather than "The solution appears to be..."
+- DO use confident language like "The solution is..." when the models agree, and say so directly if they disagree or verification found an error
 
 Generate the synthesis:`;
 
@@ -505,7 +505,7 @@ Generate the synthesis:`;
     // Format structured solutions for the prompt
     const solutionSummary = this.formatStructuredSolutions(structuredSolutions);
     
-    const prompt = `You are creating the FINAL SYNTHESIS for a collaborative AI analysis session. Your synthesis should be comprehensive, well-formatted, and clearly present the conclusions reached through collaboration.
+    const prompt = `Write the FINAL SYNTHESIS for a collaborative AI analysis session. It should be comprehensive, well-formatted, and clearly present the conclusions reached through collaboration.
 
 STRUCTURED SOLUTIONS (Most Important):
 ${solutionSummary}
@@ -526,7 +526,7 @@ Create a well-formatted synthesis with the following structure:
 
 ## CONSENSUS - SYNTHESIS
 
-### Finding the Measure of ∠DPE in △ABC
+### [A short title naming what the query asks for]
 
 1. Problem Statement and Setup:
 - Restate the problem clearly
@@ -546,21 +546,7 @@ Create a well-formatted synthesis with the following structure:
 4. Final Answer and Conclusion:
 The answer is [INSERT ANSWER HERE], representing [what it represents].
 
-Both models reached this conclusion with ${
-  structuredSolutions.size > 0 && 
-  Array.from(structuredSolutions.values()).every(s => s.confidence === 'high') 
-    ? 'high confidence' 
-    : 'consensus'
-} through ${
-  structuredSolutions.size > 0 &&
-  Array.from(structuredSolutions.values()).every(s => s.status === 'conclusive')
-    ? 'rigorous verification'
-    : 'collaborative analysis'
-}. ${
-  analysis.keyPoints.agreements.length > 0 
-    ? `The models independently verified the solution through ${analysis.keyPoints.agreements.length} key agreement points.`
-    : 'The collaborative process ensured accuracy.'
-}
+${this.describeSolutionAgreement(structuredSolutions, analysis)}
 
 FORMATTING REQUIREMENTS:
 - Use proper markdown formatting with headers (##, ###)
@@ -573,6 +559,32 @@ FORMATTING REQUIREMENTS:
 Generate the synthesis:`;
 
     return prompt;
+  }
+
+  /**
+   * Describe how far the models' structured answers agree, so the synthesis
+   * claims consensus only when the extracted answers actually match
+   */
+  private describeSolutionAgreement(
+    solutions: Map<string, StructuredSolution>,
+    analysis: AgreementAnalysis
+  ): string {
+    const entries = Array.from(solutions.entries());
+    const distinctAnswers = new Set(entries.map(([, solution]) => String(solution.value).trim()));
+
+    if (entries.length < 2 || distinctAnswers.size > 1) {
+      const answers = entries.map(([modelId, solution]) => `${modelId}: ${solution.value}`).join('; ');
+      return `The extracted final answers do not show agreement (${answers}). State which answer the evidence supports and why, and say plainly that the models did not converge.`;
+    }
+
+    const solutionValues = entries.map(([, solution]) => solution);
+    const confidence = solutionValues.every(s => s.confidence === 'high') ? 'high confidence' : 'consensus';
+    const method = solutionValues.every(s => s.status === 'conclusive') ? 'rigorous verification' : 'collaborative analysis';
+    const support = analysis.keyPoints.agreements.length > 0
+      ? ` The models independently verified the solution through ${analysis.keyPoints.agreements.length} key agreement points.`
+      : '';
+
+    return `Both models reached this conclusion with ${confidence} through ${method}.${support}`;
   }
 
   /**
