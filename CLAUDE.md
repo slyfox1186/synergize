@@ -87,7 +87,9 @@ Key variables: `PORT` (8000), `REDIS_URL`, `MODEL_CONTEXT_SIZE` (4096), `MODEL_B
 ### Jane Persona
 - Jane is the conversational partner who speaks to the user; only the final answer (`FinalAnswerService`) uses her system prompt. The collaborating models keep their phase prompts.
 - `JANE_GUIDELINES` match the original partner guidelines except for four lines about capabilities Synergize lacks (web research, file reading, cross-conversation memory, file export, LaTeX rendering). Keep those lines truthful when editing: the guidelines tell the model its listed capabilities are real.
-- `FinalAnswerService` uses the full guidelines (~2.2k tokens with runtime context) when they fit alongside the synthesis prompt and the phase's minimum generation space; otherwise it falls back to `JANE_GUIDELINES_COMPACT` (~0.7k tokens).
+- `FinalAnswerService` uses the full guidelines (~2.2k tokens with runtime context) when they fit alongside the synthesis prompt and the phase's minimum generation space; otherwise it falls back to `JANE_GUIDELINES_COMPACT` (~0.8k tokens).
+- **Critical**: `LlamaChatSession` needs `forceAddSystemPrompt: true` for Gemma. node-llama-cpp's Gemma wrapper reports no system-message support, so without the flag the system prompt is silently dropped.
+- The structured synthesis prompt claims the models agreed only when their extracted answers match after normalization (`72`, `"72°"` and `"72 degrees"` all count as the same answer). With only one extracted answer it claims neither agreement nor disagreement.
 - Synthesis prompts in `synthesisService.ts` are task instructions, not identities: don't open them with "You are ..." or they will contradict Jane.
 
 ### Phase Transition System
