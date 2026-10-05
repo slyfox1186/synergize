@@ -511,7 +511,7 @@ export function SynergizerArena({ sseService }: Props): JSX.Element {
         {isSynthesisActive && (
           <div className="model-panel relative">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-synergy-accent font-tech">Synthesis</h3>
+              <h3 className="text-synergy-accent font-tech">Synthesis · Jane</h3>
               <button
                 onClick={() => handleCopy(synthesisRef, 'Synthesis')}
                 className="text-synergy-accent hover:text-synergy-primary transition-colors p-2"

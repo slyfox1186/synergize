@@ -18,6 +18,7 @@ import { LlamaContext, Token } from 'node-llama-cpp';
 import { createLogger } from '../utils/logger.js';
 import { config } from '../config.js';
 import { PromptFormatter } from './promptFormatter.js';
+import { buildJaneSystemPrompt, JanePromptVariant } from '../prompts/janePersona.js';
 
 export interface FinalAnswerOptions {
   sessionId: string;
@@ -42,7 +43,7 @@ export interface FinalAnswerResult {
 
 /**
  * Dedicated service for final answer generation and streaming
- * Ensures reliable completion and streaming of final responses
+ * Ensures reliable completion and streaming of final responses, spoken by Jane
  */
 export class FinalAnswerService {
   private logger = createLogger('FinalAnswerService');
@@ -98,6 +99,8 @@ export class FinalAnswerService {
         });
       }
 
+      const systemPrompt = this.buildSystemPrompt(options.modelId, options.prompt, allocation);
+
       // Setup streaming routing if needed
       const originalAddToken = this.streamingService.addToken.bind(this.streamingService);
       const originalCompleteStream = this.streamingService.completeStream.bind(this.streamingService);
@@ -116,6 +119,7 @@ export class FinalAnswerService {
         finalAnswer = await this.generateWithStreaming(
           options.modelId,
           context,
+          systemPrompt,
           options.prompt,
           options.phase,
           allocation
@@ -128,7 +132,7 @@ export class FinalAnswerService {
         const generationTime = endTime - startTime;
         
         // Calculate metrics
-        const promptTokens = this.tokenCounter.countTokens(options.prompt);
+        const promptTokens = this.tokenCounter.countTokens(systemPrompt) + this.tokenCounter.countTokens(options.prompt);
         const generatedTokens = this.tokenCounter.countTokens(finalAnswer);
         const totalTokens = promptTokens + generatedTokens;
         const tokensPerSecond = Math.round((generatedTokens / generationTime) * 1000);
@@ -195,6 +199,43 @@ export class FinalAnswerService {
   }
 
   /**
+   * Build Jane's system prompt, using the full guidelines when the context window
+   * still leaves the phase's minimum generation space, and the compact ones otherwise
+   */
+  private buildSystemPrompt(modelId: string, prompt: string, allocation: TokenAllocation): string {
+    const runtime = {
+      modelName: this.modelService.getModelConfig(modelId)?.name ?? modelId,
+      date: this.formatLocalDate(new Date())
+    };
+
+    const fullSystemPrompt = buildJaneSystemPrompt('full', runtime);
+    const contextSize = config.model.contextSize || 4096;
+    const reservedTokens = allocation.debugInfo.phaseConfig.minGenerationTokens + allocation.safetyMarginTokens;
+    const fullPromptTokens = this.tokenCounter.countTokens(fullSystemPrompt) + this.tokenCounter.countTokens(prompt);
+    const variant: JanePromptVariant = fullPromptTokens + reservedTokens <= contextSize ? 'full' : 'compact';
+    const systemPrompt = variant === 'full' ? fullSystemPrompt : buildJaneSystemPrompt('compact', runtime);
+
+    this.logger.info('🗣️ Jane system prompt selected', {
+      variant,
+      systemPromptTokens: this.tokenCounter.countTokens(systemPrompt),
+      fullPromptTokens,
+      reservedTokens,
+      contextSize
+    });
+
+    return systemPrompt;
+  }
+
+  /**
+   * Format a date as YYYY-MM-DD in the server's local time zone
+   */
+  private formatLocalDate(date: Date): string {
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${date.getFullYear()}-${month}-${day}`;
+  }
+
+  /**
    * Setup routing to synthesis panel
    */
   private setupSynthesisRouting(
@@ -241,6 +282,7 @@ export class FinalAnswerService {
   private async generateWithStreaming(
     modelId: string,
     context: LlamaContext,
+    systemPrompt: string,
     prompt: string,
     phase: CollaborationPhase,
     allocation: TokenAllocation
@@ -264,7 +306,7 @@ export class FinalAnswerService {
       const { LlamaChatSession } = await import('node-llama-cpp');
       const session = new LlamaChatSession({
         contextSequence: sequence,
-        systemPrompt: ''
+        systemPrompt
       });
 
       let tokenCount = 0;
@@ -383,7 +425,7 @@ export class FinalAnswerService {
       modelId: options.modelId
     });
 
-    const fallbackContent = "I apologize, but I encountered an issue generating the final response. Please try again.";
+    const fallbackContent = "I couldn't generate the final answer: the model run failed before it finished. Please run the question again.";
     
     // Stream the fallback content
     if (options.routeToSynthesis) {
